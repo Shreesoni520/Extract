@@ -1,0 +1,28 @@
+# Dependencies / env
+.env
+.env.*
+
+# Uploaded user files (keep folder structure only)
+uploads/*
+!uploads/.htaccess
+!uploads/avatars/
+uploads/avatars/*
+!uploads/avatars/.htaccess
+
+# DB dumps / local backups
+database/backups/*.sql
+*.sql.gz
+
+# OS / editor
+.DS_Store
+Thumbs.db
+Desktop.ini
+.vscode/
+.idea/
+*.swp
+*~
+
+# Logs / temp
+*.log
+tmp/
+temp/

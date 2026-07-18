@@ -1,0 +1,2 @@
+# Deny direct access to uploads via Apache (backup; folder also has its own .htaccess)
+Options -Indexes

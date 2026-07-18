@@ -1,0 +1,137 @@
+/* Custom dot + ring cursor — light layout (dark pointer) */
+@media (pointer: fine) {
+  html.has-dot-cursor {
+    --site-hidden-cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32'%3E%3Crect width='32' height='32' fill='rgba(0%2C0%2C0%2C0.001)'/%3E%3C/svg%3E")
+      16 16,
+      none;
+  }
+
+  html.has-dot-cursor,
+  html.has-dot-cursor *,
+  html.has-dot-cursor *::before,
+  html.has-dot-cursor *::after,
+  html.has-dot-cursor *:hover,
+  html.has-dot-cursor *:active,
+  html.has-dot-cursor *:focus,
+  html.has-dot-cursor *:focus-visible,
+  html.has-dot-cursor *:focus-within {
+    cursor: var(--site-hidden-cursor) !important;
+  }
+}
+
+.site-cursor {
+  position: fixed;
+  inset: 0;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+  user-select: none;
+  z-index: 2147483647;
+}
+
+.site-cursor__dot,
+.site-cursor__ring {
+  position: fixed;
+  left: 0;
+  top: 0;
+  pointer-events: none;
+  will-change: transform;
+  transform: translate3d(-100px, -100px, 0) translate(-50%, -50%);
+}
+
+.site-cursor__dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #111111;
+  z-index: 2147483647;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.9), 0 0 8px rgba(17, 17, 17, 0.2);
+  opacity: 0;
+  transition: opacity 0.2s ease, transform 0.2s ease, background 0.2s ease;
+}
+
+.site-cursor__ring {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(17, 17, 17, 0.82);
+  background: transparent;
+  z-index: 2147483646;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.55);
+  opacity: 0;
+  transition: width 0.35s cubic-bezier(0.22, 1, 0.36, 1),
+    height 0.35s cubic-bezier(0.22, 1, 0.36, 1),
+    border-width 0.35s cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 0.25s ease,
+    background 0.25s ease,
+    opacity 0.2s ease;
+}
+
+.site-cursor.is-visible .site-cursor__dot,
+.site-cursor.is-visible .site-cursor__ring,
+.site-cursor.site-cursor--boot.is-ready .site-cursor__dot,
+.site-cursor.site-cursor--boot.is-ready .site-cursor__ring {
+  opacity: 1;
+}
+
+.site-cursor.is-active .site-cursor__ring {
+  width: 52px;
+  height: 52px;
+  border-width: 1px;
+  border-color: rgba(17, 17, 17, 0.45);
+  background: rgba(17, 17, 17, 0.06);
+}
+
+.site-cursor.is-active .site-cursor__dot {
+  opacity: 0;
+  transform: scale(0.4);
+}
+
+.site-cursor.is-clicking .site-cursor__ring {
+  width: 24px;
+  height: 24px;
+  border-color: #111111;
+  background: rgba(17, 17, 17, 0.1);
+}
+
+.site-cursor.is-clicking .site-cursor__dot {
+  opacity: 1;
+  background: #111111;
+}
+
+@media (pointer: coarse) {
+  .site-cursor {
+    display: none !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .site-cursor__dot,
+  .site-cursor__ring {
+    transition: opacity 0.12s linear;
+  }
+}
+
+[data-theme="dark"] .site-cursor__dot {
+  background: #eef1f4;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.5), 0 0 8px rgba(255, 255, 255, 0.15);
+}
+
+[data-theme="dark"] .site-cursor__ring {
+  border-color: rgba(238, 241, 245, 0.82);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.45);
+}
+
+[data-theme="dark"] .site-cursor.is-active .site-cursor__ring {
+  border-color: rgba(238, 241, 245, 0.45);
+  background: rgba(238, 241, 245, 0.06);
+}
+
+[data-theme="dark"] .site-cursor.is-clicking .site-cursor__ring {
+  border-color: #eef1f4;
+  background: rgba(238, 241, 245, 0.1);
+}
+
+[data-theme="dark"] .site-cursor.is-clicking .site-cursor__dot {
+  background: #eef1f4;
+}
