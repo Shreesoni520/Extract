@@ -118,12 +118,101 @@
   }
 
   if (uploadForm) {
-    uploadForm.addEventListener('submit', (e) => {
+    uploadForm.addEventListener('submit', async (e) => {
       const file = fileInput?.files?.[0];
+      const useBlob = uploadForm.dataset.blobUpload === '1';
+
       if (!file) return;
       if (file.size > maxBytes) {
         e.preventDefault();
         showSizeLimitMessage(file);
+        return;
+      }
+
+      // Direct-to-Vercel-Blob — never send the file through the serverless function
+      if (!useBlob) return;
+
+      e.preventDefault();
+      const titleInput = uploadForm.querySelector('[name="title"]');
+      const descInput = uploadForm.querySelector('[name="description"]');
+      const passInput = uploadForm.querySelector('[name="require_password"]');
+      const title = (titleInput?.value || '').trim();
+      if (!title) {
+        alert('Title is required.');
+        titleInput?.focus();
+        return;
+      }
+
+      const submitBtn = uploadForm.querySelector('button[type="submit"]');
+      const originalBtn = submitBtn?.textContent;
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Uploading…';
+      }
+
+      try {
+        const pathname = `uploads/${Date.now()}-${Math.random().toString(16).slice(2)}/${file.name || 'file'}`;
+        const tokenRes = await fetch('/Extract/api/blob-token.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin',
+          body: JSON.stringify({
+            type: 'blob.generate-client-token',
+            payload: { pathname, clientPayload: null, multipart: false },
+          }),
+        });
+        const tokenData = await tokenRes.json();
+        if (!tokenRes.ok || !tokenData.clientToken) {
+          throw new Error(tokenData.error || 'Could not start upload.');
+        }
+
+        const putUrl = `https://vercel.com/api/blob/?${new URLSearchParams({ pathname: tokenData.pathname || pathname })}`;
+        const putRes = await fetch(putUrl, {
+          method: 'PUT',
+          headers: {
+            authorization: `Bearer ${tokenData.clientToken}`,
+            'x-api-version': '12',
+            'x-vercel-blob-access': 'public',
+            ...(file.type ? { 'x-content-type': file.type } : {}),
+          },
+          body: file,
+        });
+        if (!putRes.ok) {
+          let msg = 'Upload to storage failed.';
+          try {
+            const err = await putRes.json();
+            msg = err?.error?.message || msg;
+          } catch (_) {}
+          throw new Error(msg);
+        }
+        const blob = await putRes.json();
+        if (!blob?.url) throw new Error('Upload finished but no file URL was returned.');
+
+        const regRes = await fetch('/Extract/api/register-upload.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin',
+          body: JSON.stringify({
+            title,
+            description: (descInput?.value || '').trim(),
+            url: blob.url,
+            original_name: file.name || 'file',
+            mime_type: file.type || blob.contentType || 'application/octet-stream',
+            file_size: file.size,
+            require_password: !!(passInput && passInput.checked),
+          }),
+        });
+        const regData = await regRes.json();
+        if (!regRes.ok || !regData.ok) {
+          throw new Error(regData.error || 'Could not save the file.');
+        }
+        window.location.href = '/Extract/app/?uploaded=1';
+      } catch (err) {
+        alert(err?.message || 'Upload failed. Please try again.');
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = originalBtn || 'Upload';
+        }
       }
     });
   }

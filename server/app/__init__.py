@@ -19,8 +19,7 @@ def create_app() -> Flask:
         static_folder=None,
     )
     app.secret_key = cfg.SECRET_KEY
-    # Do not exceed MAX_UPLOAD_BYTES (on Vercel that must stay under ~4.5 MB)
-    app.config["MAX_CONTENT_LENGTH"] = cfg.MAX_UPLOAD_BYTES
+    app.config["MAX_CONTENT_LENGTH"] = cfg.MAX_CONTENT_LENGTH
     app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(days=14)
     app.config["SESSION_COOKIE_HTTPONLY"] = True
     app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
@@ -41,6 +40,7 @@ def create_app() -> Flask:
             "max_upload_bytes": cfg.MAX_UPLOAD_BYTES,
             "max_upload_label": cfg.max_upload_label(),
             "on_vercel": cfg.ON_VERCEL,
+            "blob_enabled": cfg.BLOB_ENABLED,
         }
 
     @app.errorhandler(413)

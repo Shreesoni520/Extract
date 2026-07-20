@@ -30,7 +30,10 @@
           <strong class="upload-max-value">{{ max_upload_label }}</strong>
         </div>
       </div>
-      <p class="hint">Choose if the file needs a password, or leave it open for anyone.{% if on_vercel %} This host allows up to {{ max_upload_label }}. For bigger files (up to 5 GB), use the local app.{% else %} You can upload up to <strong>{{ max_upload_label }}</strong> per file.{% endif %}</p>
+      <p class="hint">{% if blob_enabled %}Files upload directly to secure cloud storage (up to <strong>{{ max_upload_label }}</strong>).{% elif on_vercel %}This host only allows about <strong>{{ max_upload_label }}</strong> unless Blob storage is connected. Larger files work on the local app (up to 5 GB).{% else %}You can upload up to <strong>{{ max_upload_label }}</strong> per file.{% endif %} Choose if the file needs a password, or leave it open for anyone.</p>
+      {% if on_vercel and not blob_enabled %}
+      <div class="alert" role="status">Cloud storage is not connected yet, so large uploads will fail on this host. In Vercel → Storage, create a <strong>Blob</strong> store for this project, then redeploy.</div>
+      {% endif %}
       {% if message %}<div class="alert ok">{{ message }}</div>{% endif %}
       {% if error %}<div class="alert" id="serverUploadError">{{ error }}</div>{% endif %}
 
@@ -49,7 +52,11 @@
         <button type="button" class="ghost small" id="sizeLimitDismiss">Got it</button>
       </div>
 
-      <form method="post" action="/Extract/app/" enctype="multipart/form-data" class="upload-form" id="uploadForm" data-max-bytes="{{ max_upload_bytes }}" data-max-label="{{ max_upload_label }}">
+      <form method="post" action="/Extract/app/" enctype="multipart/form-data" class="upload-form" id="uploadForm"
+            data-max-bytes="{{ max_upload_bytes }}"
+            data-max-label="{{ max_upload_label }}"
+            data-blob-upload="{{ '1' if blob_enabled else '0' }}"
+            data-on-vercel="{{ '1' if on_vercel else '0' }}">
         <input type="hidden" name="action" value="upload" />
         <label>
           <span>Title</span>
@@ -149,7 +156,7 @@
   <audio id="ping" preload="auto">
     <source src="/Extract/assets/sfx/notify.wav" type="audio/wav" />
   </audio>
-  <script src="/Extract/assets/js/app.js?v=19"></script>
+  <script src="/Extract/assets/js/app.js?v=21"></script>
   {% set skip_floating_theme = true %}
   {% include 'partials/theme-foot.html' %}
 </body>

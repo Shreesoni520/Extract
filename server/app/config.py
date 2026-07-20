@@ -17,16 +17,30 @@ PASSWORD_TTL_SECONDS = int(os.environ.get("PASSWORD_TTL_SECONDS", "300"))
 UNLOCK_TTL_SECONDS = int(os.environ.get("UNLOCK_TTL_SECONDS", "300"))
 PASSWORD_MIN_LENGTH = 8
 
-# Vercel serverless request body limit is ~4.5 MB — stay under it there.
-# Local Flask/XAMPP can accept large files (streamed to disk).
-_VERCEL_MAX = 4 * 1024 * 1024  # 4 MB (platform hard limit)
+# Vercel serverless request body limit is ~4.5 MB.
+# With BLOB_READ_WRITE_TOKEN, browsers upload straight to Vercel Blob (much larger).
+BLOB_READ_WRITE_TOKEN = (os.environ.get("BLOB_READ_WRITE_TOKEN") or "").strip()
+BLOB_ENABLED = bool(BLOB_READ_WRITE_TOKEN)
+
+_VERCEL_FUNCTION_MAX = 3 * 1024 * 1024  # stay under platform 4.5 MB with form overhead
+_VERCEL_BLOB_MAX = 500 * 1024 * 1024  # 500 MB via client → Blob
 _LOCAL_MAX = 5 * 1024 * 1024 * 1024  # 5 GB
+
 if os.environ.get("MAX_UPLOAD_BYTES"):
     MAX_UPLOAD_BYTES = int(os.environ["MAX_UPLOAD_BYTES"])
+elif ON_VERCEL and BLOB_ENABLED:
+    MAX_UPLOAD_BYTES = _VERCEL_BLOB_MAX
 elif ON_VERCEL:
-    MAX_UPLOAD_BYTES = _VERCEL_MAX
+    MAX_UPLOAD_BYTES = _VERCEL_FUNCTION_MAX
 else:
     MAX_UPLOAD_BYTES = _LOCAL_MAX
+
+# What Flask itself will accept in one request (avatars / classic form upload).
+if ON_VERCEL:
+    MAX_CONTENT_LENGTH = _VERCEL_FUNCTION_MAX
+else:
+    MAX_CONTENT_LENGTH = MAX_UPLOAD_BYTES
+
 
 def max_upload_label() -> str:
     gb = MAX_UPLOAD_BYTES / (1024 * 1024 * 1024)

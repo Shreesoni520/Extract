@@ -288,20 +288,28 @@ def admin_upload():
                     )
                     row = cur.fetchone()
                     if row:
-                        path = Path(cfg.UPLOAD_DIR) / row["filename"]
+                        stored = row["filename"] or ""
                         cur.execute(
                             "DELETE FROM items WHERE id = %s AND admin_id = %s",
                             (item_id, me_id),
                         )
-                        if path.is_file():
-                            try:
-                                path.unlink()
-                            except OSError:
-                                pass
+                        from ..blob_store import is_blob_url, delete_blob_url
+
+                        if is_blob_url(stored) or stored.startswith("https://"):
+                            delete_blob_url(stored)
+                        else:
+                            path = Path(cfg.UPLOAD_DIR) / stored
+                            if path.is_file():
+                                try:
+                                    path.unlink()
+                                except OSError:
+                                    pass
                         return _flash_redirect("ok", "Item deleted.")
             return _flash_redirect("error", "Could not delete that file.")
 
     flash = session.pop("flash", None)
+    if not flash and request.args.get("uploaded") == "1":
+        flash = {"type": "ok", "text": "File uploaded."}
     message = (
         str(flash["text"])
         if flash and flash.get("type") == "ok"

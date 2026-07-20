@@ -23,7 +23,7 @@ CREATE TABLE IF NOT EXISTS items (
   admin_id INTEGER NOT NULL,
   title VARCHAR(180) NOT NULL,
   description TEXT DEFAULT NULL,
-  filename VARCHAR(255) NOT NULL,
+  filename TEXT NOT NULL,
   original_name VARCHAR(255) NOT NULL,
   mime_type VARCHAR(120) NOT NULL,
   file_size INTEGER NOT NULL DEFAULT 0,
@@ -216,5 +216,11 @@ def ensure_schema(conn) -> None:
                     )
                 except Exception:
                     pass
+            try:
+                cur.execute(
+                    "ALTER TABLE items MODIFY COLUMN filename VARCHAR(512) NOT NULL"
+                )
+            except Exception:
+                pass
     except Exception:
         pass

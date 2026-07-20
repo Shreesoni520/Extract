@@ -7,13 +7,14 @@ from pathlib import Path
 import hmac
 import time
 
-from flask import Blueprint, session, request, send_file, make_response, render_template
+from flask import Blueprint, session, request, send_file, make_response, render_template, redirect
 
 from .. import config as cfg
 from ..db import get_db
 from ..auth import (
     api_login_required,
     visitor_token,
+    admin_logged_in,
 )
 from ..helpers import (
     json_response,
@@ -33,6 +34,13 @@ from ..helpers import (
     parse_sql_datetime,
 )
 from ..notifications import notifications_payload
+from ..blob_store import (
+    blob_enabled,
+    generate_client_token,
+    safe_upload_pathname,
+    is_blob_url,
+    delete_blob_url,
+)
 
 api_bp = Blueprint("api", __name__)
 
@@ -457,15 +465,27 @@ def download():
     upload_dir = Path(cfg.UPLOAD_DIR)
 
     def serve_file(row: dict, serve_mode: str):
-        path = upload_dir / row["filename"]
+        stored = row["filename"] or ""
+        mime = row["mime_type"] or "application/octet-stream"
+        filename = row["original_name"]
+
+        # Vercel Blob (or any https URL stored in filename)
+        if is_blob_url(stored) or stored.startswith("https://"):
+            target = stored
+            if serve_mode != "view" or not is_previewable(mime):
+                sep = "&" if "?" in target else "?"
+                target = f"{target}{sep}download=1"
+            resp = redirect(target, code=302)
+            resp.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+            return resp
+
+        path = upload_dir / stored
         if not path.is_file():
             return locked_page(
                 "File unavailable",
                 "This file could not be found. Please go home and try another file.",
                 404,
             )
-        mime = row["mime_type"] or "application/octet-stream"
-        filename = row["original_name"]
         as_attachment = not (serve_mode == "view" and is_previewable(mime))
         resp = send_file(
             path,
@@ -765,3 +785,120 @@ def revoke_access():
     return json_response(
         {"ok": False, "error": "request_id or item_id required"}, 400
     )
+
+
+@api_bp.route("/blob-token.php", methods=["POST", "OPTIONS"])
+def blob_token():
+    """Issue a short-lived Vercel Blob client token (handleUpload-compatible)."""
+    if request.method == "OPTIONS":
+        resp = make_response("", 204)
+        resp.headers["Access-Control-Allow-Methods"] = "POST, OPTIONS"
+        resp.headers["Access-Control-Allow-Headers"] = "Content-Type"
+        return resp
+
+    if not admin_logged_in():
+        return json_response({"ok": False, "error": "Unauthorized"}, 401)
+    if not blob_enabled():
+        return json_response(
+            {
+                "ok": False,
+                "error": "Blob storage is not configured. Add a Vercel Blob store to this project.",
+            },
+            503,
+        )
+
+    body = read_json_body() or {}
+    # Support both our simple shape and @vercel/blob handleUpload shape
+    if body.get("type") == "blob.generate-client-token":
+        payload = body.get("payload") or {}
+        pathname = (payload.get("pathname") or "").strip()
+    else:
+        pathname = (body.get("pathname") or "").strip()
+        if not pathname:
+            original = (body.get("original_name") or "file").strip()
+            pathname = safe_upload_pathname(original)
+
+    if not pathname or ".." in pathname or pathname.startswith("/"):
+        return json_response({"ok": False, "error": "Invalid pathname"}, 400)
+
+    try:
+        client_token = generate_client_token(
+            pathname,
+            maximum_size_in_bytes=cfg.MAX_UPLOAD_BYTES,
+            add_random_suffix=True,
+        )
+    except Exception as exc:
+        return json_response({"ok": False, "error": str(exc)}, 500)
+
+    return json_response(
+        {
+            "ok": True,
+            "type": "blob.generate-client-token",
+            "clientToken": client_token,
+            "pathname": pathname,
+            "access": "public",
+            "maxBytes": cfg.MAX_UPLOAD_BYTES,
+        }
+    )
+
+
+@api_bp.route("/register-upload.php", methods=["POST"])
+@api_login_required
+def register_upload():
+    """Save metadata after a direct-to-Blob client upload."""
+    if not blob_enabled():
+        return json_response({"ok": False, "error": "Blob storage is not configured."}, 503)
+
+    body = read_json_body() or {}
+    title = (body.get("title") or "").strip()
+    description = (body.get("description") or "").strip()
+    blob_url = (body.get("url") or "").strip()
+    original_name = (body.get("original_name") or "").strip() or "file"
+    mime = (body.get("mime_type") or "application/octet-stream").strip()
+    size = int(body.get("file_size") or 0)
+    require_password = 1 if body.get("require_password") else 0
+    me_id = int(session.get("admin_id") or 0)
+
+    if title == "":
+        return json_response({"ok": False, "error": "Title is required."}, 400)
+    if not is_blob_url(blob_url):
+        return json_response({"ok": False, "error": "Invalid blob URL."}, 400)
+    if size < 1:
+        return json_response({"ok": False, "error": "Empty file."}, 400)
+    if size > cfg.MAX_UPLOAD_BYTES:
+        delete_blob_url(blob_url)
+        return json_response(
+            {
+                "ok": False,
+                "error": f"File is too large. Maximum upload size is {cfg.max_upload_label()}.",
+            },
+            400,
+        )
+    if me_id < 1:
+        return json_response({"ok": False, "error": "Not logged in."}, 401)
+    if len(blob_url) > 512:
+        return json_response({"ok": False, "error": "Blob URL too long."}, 400)
+
+    conn = get_db()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                "INSERT INTO items "
+                "(admin_id, title, description, filename, original_name, mime_type, file_size, require_password) "
+                "VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
+                (
+                    me_id,
+                    title,
+                    description if description else None,
+                    blob_url,
+                    original_name[:255],
+                    mime[:120],
+                    size,
+                    require_password,
+                ),
+            )
+    except Exception:
+        delete_blob_url(blob_url)
+        return json_response({"ok": False, "error": "Upload failed — database error."}, 500)
+
+    return json_response({"ok": True, "message": "File uploaded."})
