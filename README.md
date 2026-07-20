@@ -16,6 +16,8 @@ Built by **Krishna**.
 
 ## Quick start (local)
 
+> Local database and uploads were reset again for a fresh start. Sign up to create the first account.
+
 1. Start **MySQL** in XAMPP.
 2. Double-click **`start-site.bat`** (keeps the Python server running).
 3. Open: **http://127.0.0.1:5000/Extract/**
