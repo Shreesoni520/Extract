@@ -1,8 +1,4 @@
-<?php
-declare(strict_types=1);
-/** Theme script — include once before </body>. */
-?>
-<?php if (empty($skipFloatingTheme)): ?>
+{% if not (skip_floating_theme|default(false)) %}
 <script>
 (function () {
   if (!document.getElementById('themeToggle')) {
@@ -17,5 +13,5 @@ declare(strict_types=1);
   }
 })();
 </script>
-<?php endif; ?>
+{% endif %}
 <script src="/Extract/assets/js/theme.js?v=2" defer></script>

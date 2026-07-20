@@ -1,0 +1,27 @@
+{# Shared top navigation — nav_context: browse | upload | account | users #}
+{% set ctx = nav_context|default('browse') %}
+<nav class="app-nav" aria-label="Main">
+  {% if ctx == 'browse' %}
+    <button class="nav-btn" id="backBtn" type="button">← Back</button>
+  {% else %}
+    <a class="nav-btn" href="/Extract/">← Back</a>
+  {% endif %}
+  <div class="app-nav-end">
+    {% if ctx != 'browse' %}
+      <a class="nav-btn" href="/Extract/?browse=1">Find people</a>
+    {% endif %}
+    {% if ctx == 'upload' %}
+      <a class="nav-btn" href="/Extract/app/account.php">Account</a>
+    {% elif ctx == 'account' %}
+      <a class="nav-btn" href="/Extract/app/">Upload files</a>
+    {% elif ctx == 'users' %}
+      <a class="nav-btn" href="/Extract/app/">Upload files</a>
+      <a class="nav-btn" href="/Extract/app/account.php">Account</a>
+    {% else %}
+      <a class="nav-btn" href="/Extract/app/">Upload files</a>
+      <a class="nav-btn" href="/Extract/app/account.php">Account</a>
+    {% endif %}
+    <button type="button" class="nav-btn" id="themeToggle" aria-label="Toggle dark mode" aria-pressed="false">Dark</button>
+    <a class="nav-btn nav-btn-dark" href="/Extract/app/logout.php">Logout</a>
+  </div>
+</nav>

@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en" class="has-dot-cursor">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Sign up — {{ app_name }}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Sora:wght@500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/Extract/assets/css/dot-cursor.css?v=1" />
+  <link rel="stylesheet" href="/Extract/assets/css/app.css?v=6" />
+  {% include 'partials/theme-head.html' %}
+</head>
+<body class="login-body">
+  {% include 'partials/dot-cursor.html' %}
+  <a class="nav-btn login-back" href="/Extract/">← Back</a>
+  <div class="login-wrap">
+    <h1>Sign up</h1>
+    <p class="sub">Create an account, then you can find people and upload files.</p>
+    {% if error %}
+      <div class="alert">{{ error }}</div>
+    {% endif %}
+    <form method="post" class="login-form" autocomplete="off">
+      <label>
+        <span>Username</span>
+        <input type="text" name="username" required minlength="3" maxlength="32"
+               pattern="[a-z0-9._-]+" value="{{ username_value }}" autofocus
+               autocapitalize="off" autocorrect="off" spellcheck="false"
+               placeholder="yourname" />
+      </label>
+      <label>
+        <span>Password</span>
+        <input type="password" name="password" required minlength="{{ password_min_length }}" />
+      </label>
+      <label>
+        <span>Confirm password</span>
+        <input type="password" name="confirm" required minlength="{{ password_min_length }}" />
+      </label>
+      <button type="submit">Sign up</button>
+    </form>
+    <p class="auth-switch">
+      Already have an account?
+      <a href="/Extract/app/login.php">Sign in</a>
+    </p>
+  </div>
+  {% set skip_floating_theme = false %}
+  {% include 'partials/theme-foot.html' %}
+</body>
+</html>

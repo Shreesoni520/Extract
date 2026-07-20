@@ -1,112 +1,15 @@
-<?php
-declare(strict_types=1);
-
-require_once __DIR__ . '/../config/auth.php';
-require_admin();
-start_session();
-ensure_upload_dir();
-
-$message = '';
-$error = '';
-$adminId = (int) ($_SESSION['admin_id'] ?? 0);
-
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'avatar') {
-    $file = $_FILES['avatar'] ?? null;
-    if (!$file || ($file['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {
-        $error = 'Choose a profile image.';
-    } else {
-        $mime = mime_content_type((string) $file['tmp_name']) ?: '';
-        $allowed = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/webp' => 'webp', 'image/gif' => 'gif'];
-        if (!isset($allowed[$mime])) {
-            $error = 'Use JPG, PNG, WEBP, or GIF.';
-        } elseif (($file['size'] ?? 0) > 3 * 1024 * 1024) {
-            $error = 'Image too large (max 3 MB).';
-        } else {
-            $stored = bin2hex(random_bytes(12)) . '.' . $allowed[$mime];
-            $dest = app_config()['app']['upload_dir'] . '/avatars/' . $stored;
-            $old = db()->prepare('SELECT avatar FROM admins WHERE id = ?');
-            $old->execute([$adminId]);
-            $oldName = $old->fetchColumn();
-            if (!move_uploaded_file((string) $file['tmp_name'], $dest)) {
-                $error = 'Could not save image.';
-            } else {
-                db()->prepare('UPDATE admins SET avatar = ? WHERE id = ?')->execute([$stored, $adminId]);
-                if (is_string($oldName) && $oldName !== '') {
-                    $oldPath = app_config()['app']['upload_dir'] . '/avatars/' . basename($oldName);
-                    if (is_file($oldPath)) {
-                        @unlink($oldPath);
-                    }
-                }
-                $message = 'Profile image updated.';
-            }
-        }
-    }
-}
-
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'account') {
-    $current = (string) ($_POST['current_password'] ?? '');
-    $newUser = trim((string) ($_POST['new_username'] ?? ''));
-    $newPass = (string) ($_POST['new_password'] ?? '');
-    $confirm = (string) ($_POST['confirm_password'] ?? '');
-
-    $stmt = db()->prepare('SELECT id, username, password_hash FROM admins WHERE id = ? LIMIT 1');
-    $stmt->execute([$adminId]);
-    $admin = $stmt->fetch();
-
-    if (!$admin) {
-        logout_admin();
-        header('Location: /Extract/app/login.php');
-        exit;
-    } elseif ($newUser === '' || strlen($newUser) < 3) {
-        $error = 'Username must be at least 3 characters.';
-    } elseif ($newPass !== '' && strlen($newPass) < PASSWORD_MIN_LENGTH) {
-        $error = 'New password must be at least ' . PASSWORD_MIN_LENGTH . ' characters.';
-    } elseif ($newPass !== '' && ($current === '' || !password_verify($current, $admin['password_hash']))) {
-        $error = 'To change your password, enter the password you already use to sign in.';
-    } else {
-        [$normalized, $userError] = parse_username($newUser);
-        if ($userError !== null) {
-            $error = $userError;
-        } elseif ($newPass !== '' && $newPass !== $confirm) {
-            $error = 'New password and confirm do not match.';
-        } elseif (username_collides($newUser, $adminId)) {
-            $error = username_taken_message();
-        } else {
-            if ($newPass !== '') {
-                $hash = password_hash($newPass, PASSWORD_DEFAULT);
-                $upd = db()->prepare('UPDATE admins SET username = ?, password_hash = ? WHERE id = ?');
-                $upd->execute([$normalized, $hash, $adminId]);
-                $message = 'Username and password updated.';
-            } else {
-                $upd = db()->prepare('UPDATE admins SET username = ? WHERE id = ?');
-                $upd->execute([$normalized, $adminId]);
-                $message = $normalized !== (string) $admin['username']
-                    ? 'Username updated.'
-                    : 'Nothing to change.';
-            }
-            $_SESSION['admin_username'] = $normalized;
-        }
-    }
-}
-
-$profile = db()->prepare('SELECT username, avatar FROM admins WHERE id = ? LIMIT 1');
-$profile->execute([$adminId]);
-$me = $profile->fetch() ?: ['username' => '', 'avatar' => null];
-$currentUsername = (string) $me['username'];
-$avatarSrc = avatar_url($me['avatar'] ? (string) $me['avatar'] : null, $adminId);
-?>
 <!DOCTYPE html>
 <html lang="en" class="has-dot-cursor">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Account — Shree's Extractions</title>
+  <title>Account — {{ app_name }}</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Sora:wght@500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/Extract/assets/css/dot-cursor.css?v=1" />
   <link rel="stylesheet" href="/Extract/assets/css/app.css?v=6" />
-  <?php require __DIR__ . '/../includes/theme-head.php'; ?>
+  {% include 'partials/theme-head.html' %}
   <style>
     .account-page {
       min-height: 100vh;
@@ -226,22 +129,23 @@ $avatarSrc = avatar_url($me['avatar'] ? (string) $me['avatar'] : null, $adminId)
   </style>
 </head>
 <body class="account-page">
-  <?php require __DIR__ . '/../includes/dot-cursor.php'; ?>
+  {% include 'partials/dot-cursor.html' %}
   <div class="account-top">
-    <?php $navContext = 'account'; require __DIR__ . '/../includes/nav.php'; ?>
+    {% set nav_context = 'account' %}
+    {% include 'partials/nav.html' %}
   </div>
 
   <div class="account-center">
     <div class="account-wrap">
-      <?php if ($message): ?><div class="alert ok"><?= e($message) ?></div><?php endif; ?>
-      <?php if ($error): ?><div class="alert"><?= e($error) ?></div><?php endif; ?>
+      {% if message %}<div class="alert ok">{{ message }}</div>{% endif %}
+      {% if error %}<div class="alert">{{ error }}</div>{% endif %}
 
       <div class="account-stack">
         <section class="account-box">
           <h2>Profile image</h2>
           <p class="sub">Shown when people search for your username.</p>
           <div class="avatar-preview">
-            <img id="avatarPreview" src="<?= e($avatarSrc) ?>" alt="Profile" />
+            <img id="avatarPreview" src="{{ avatar_src }}" alt="Profile" />
             <p class="hint">JPG, PNG, WEBP or GIF · max 3 MB</p>
           </div>
           <form method="post" enctype="multipart/form-data" class="login-form" id="avatarForm">
@@ -263,16 +167,16 @@ $avatarSrc = avatar_url($me['avatar'] ? (string) $me['avatar'] : null, $adminId)
             <label>
               <span>Username</span>
               <input type="text" name="new_username" required minlength="3" maxlength="32"
-                     pattern="[a-z0-9._-]+" value="<?= e($currentUsername) ?>"
+                     pattern="[a-z0-9._-]+" value="{{ current_username }}"
                      autocapitalize="off" autocorrect="off" spellcheck="false" />
             </label>
             <label>
               <span>New password <em>(optional)</em></span>
-              <input type="password" name="new_password" id="newPassword" minlength="<?= PASSWORD_MIN_LENGTH ?>" placeholder="Leave blank to keep your signup password" />
+              <input type="password" name="new_password" id="newPassword" minlength="{{ password_min_length }}" placeholder="Leave blank to keep your signup password" />
             </label>
             <label>
               <span>Confirm new password</span>
-              <input type="password" name="confirm_password" id="confirmPassword" minlength="<?= PASSWORD_MIN_LENGTH ?>" />
+              <input type="password" name="confirm_password" id="confirmPassword" minlength="{{ password_min_length }}" />
             </label>
             <label id="currentPassWrap" hidden>
               <span>Your signup / sign-in password</span>
@@ -349,9 +253,7 @@ $avatarSrc = avatar_url($me['avatar'] ? (string) $me['avatar'] : null, $adminId)
       syncPassFields();
     })();
   </script>
-  <?php
-    $skipFloatingTheme = true;
-    require __DIR__ . '/../includes/theme-foot.php';
-  ?>
+  {% set skip_floating_theme = true %}
+  {% include 'partials/theme-foot.html' %}
 </body>
 </html>

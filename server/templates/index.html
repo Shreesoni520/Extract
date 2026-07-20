@@ -1,39 +1,27 @@
-<?php
-declare(strict_types=1);
-
-require_once __DIR__ . '/config/auth.php';
-visitor_token();
-start_session();
-
-$appName = app_config()['app']['name'];
-$loggedIn = admin_logged_in();
-$username = (string) ($_SESSION['admin_username'] ?? '');
-$openBrowse = $loggedIn && isset($_GET['browse']);
-?>
 <!DOCTYPE html>
 <html lang="en" class="has-dot-cursor">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title><?= e($appName) ?></title>
+  <title>{{ app_name }}</title>
   <meta name="description" content="Sign in to search people, see their files, and request access when needed." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Sora:wght@600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/Extract/assets/css/dot-cursor.css?v=1" />
   <link rel="stylesheet" href="/Extract/assets/css/public.css?v=36" />
-  <?php require __DIR__ . '/includes/theme-head.php'; ?>
+  {% include 'partials/theme-head.html' %}
 </head>
-<body class="view-landing" data-logged-in="<?= $loggedIn ? '1' : '0' ?>">
-  <?php require __DIR__ . '/includes/dot-cursor.php'; ?>
+<body class="view-landing" data-logged-in="{{ '1' if logged_in else '0' }}">
+  {% include 'partials/dot-cursor.html' %}
   <div class="bg" aria-hidden="true"></div>
   <div class="page-veil" id="pageVeil" aria-hidden="true"></div>
 
   <section class="hero" id="landing">
     <div class="hero-inner">
-      <h1 class="brand-hero"><?= e($appName) ?></h1>
-      <?php if ($loggedIn): ?>
-        <p class="hero-line">Hi <?= e($username) ?>. Search people and open their files.</p>
+      <h1 class="brand-hero">{{ app_name }}</h1>
+      {% if logged_in %}
+        <p class="hero-line">Hi {{ username }}. Search people and open their files.</p>
         <div class="hero-actions">
           <button class="btn" id="browseBtn" type="button">Find people</button>
           <a class="btn btn-ghost" href="/Extract/app/">Upload files</a>
@@ -43,20 +31,21 @@ $openBrowse = $loggedIn && isset($_GET['browse']);
           ·
           <a href="/Extract/app/logout.php">Logout</a>
         </p>
-      <?php else: ?>
+      {% else %}
         <p class="hero-line">Sign in or sign up first. Then you can find people and use files.</p>
         <div class="hero-actions">
           <a class="btn" href="/Extract/app/login.php">Sign in</a>
           <a class="btn btn-ghost" href="/Extract/app/register.php">Sign up</a>
         </div>
-      <?php endif; ?>
+      {% endif %}
     </div>
   </section>
 
-  <?php if ($loggedIn): ?>
+  {% if logged_in %}
   <section class="files-view" id="filesView" hidden>
       <div class="files-wrap">
-        <?php $navContext = 'browse'; require __DIR__ . '/includes/nav.php'; ?>
+        {% set nav_context = 'browse' %}
+        {% include 'partials/nav.html' %}
       <div class="files">
         <div class="section-head">
           <h2 id="sectionTitle">Find people</h2>
@@ -104,7 +93,7 @@ $openBrowse = $loggedIn && isset($_GET['browse']);
         </div>
       </div>
       <footer class="foot">
-        <p><?= e($appName) ?></p>
+        <p>{{ app_name }}</p>
       </footer>
     </div>
   </section>
@@ -137,20 +126,19 @@ $openBrowse = $loggedIn && isset($_GET['browse']);
       <button id="requestBtn" type="button" class="btn" hidden>Request password</button>
     </div>
   </div>
-  <?php endif; ?>
+  {% endif %}
 
   <script>
-    window.SE_LOGGED_IN = <?= $loggedIn ? 'true' : 'false' ?>;
-    window.SE_OPEN_BROWSE = <?= $openBrowse ? 'true' : 'false' ?>;
+    window.SE_LOGGED_IN = {{ 'true' if logged_in else 'false' }};
+    window.SE_OPEN_BROWSE = {{ 'true' if open_browse else 'false' }};
   </script>
-  <?php if ($loggedIn): ?>
+  {% if logged_in %}
   <script src="/Extract/assets/js/public.js?v=32"></script>
-  <?php
-    $skipFloatingTheme = true;
-    require __DIR__ . '/includes/theme-foot.php';
-  ?>
-  <?php else: ?>
-  <?php require __DIR__ . '/includes/theme-foot.php'; ?>
-  <?php endif; ?>
+  {% set skip_floating_theme = true %}
+  {% include 'partials/theme-foot.html' %}
+  {% else %}
+  {% set skip_floating_theme = false %}
+  {% include 'partials/theme-foot.html' %}
+  {% endif %}
 </body>
 </html>

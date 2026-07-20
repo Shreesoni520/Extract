@@ -1,0 +1,43 @@
+<article class="item-row {{ '' if item.is_active else 'off' }}">
+  <div>
+    <h3>{{ item.title }}</h3>
+    <p>
+      by {{ item.uploader or 'unknown' }}
+      · {{ 'Password required' if item.require_password else 'Open file' }}
+      · {{ item.original_name }}
+      · {{ item.file_size_fmt }}
+    </p>
+  </div>
+  <div class="item-actions">
+    <form method="post">
+      <input type="hidden" name="action" value="toggle_password" />
+      <input type="hidden" name="item_id" value="{{ item.id }}" />
+      <button type="submit" class="ghost small">{{ 'Make open' if item.require_password else 'Need password' }}</button>
+    </form>
+    {% if item.unlocked_count|int > 0 %}
+    <form method="post">
+      <input type="hidden" name="action" value="lock_all" />
+      <input type="hidden" name="item_id" value="{{ item.id }}" />
+      <button type="submit" class="ghost small">Lock again</button>
+    </form>
+    {% endif %}
+    {% if not item.require_password %}
+    <button
+      type="button"
+      class="ghost small js-copy-link"
+      data-item-id="{{ item.id }}"
+      data-mime="{{ item.mime_type }}"
+    >Copy link</button>
+    {% endif %}
+    <form method="post">
+      <input type="hidden" name="action" value="toggle" />
+      <input type="hidden" name="item_id" value="{{ item.id }}" />
+      <button type="submit" class="ghost small">{{ 'Hide' if item.is_active else 'Show' }}</button>
+    </form>
+    <form method="post" onsubmit="return confirm('Delete this file?');">
+      <input type="hidden" name="action" value="delete" />
+      <input type="hidden" name="item_id" value="{{ item.id }}" />
+      <button type="submit" class="ghost small btn-delete">Delete</button>
+    </form>
+  </div>
+</article>
