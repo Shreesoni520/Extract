@@ -223,6 +223,109 @@ button[type="submit"]:not(.ghost):hover { background: #000; }
   color: var(--ok);
 }
 
+.upload-panel-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.upload-panel-head h2 {
+  margin: 0;
+}
+
+.upload-max-badge {
+  display: grid;
+  gap: 0.1rem;
+  padding: 0.55rem 0.85rem;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: #111;
+  color: #fff;
+  text-align: right;
+  min-width: 7.5rem;
+}
+
+.upload-max-kicker {
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.upload-max-value {
+  font-family: var(--display);
+  font-size: 1.35rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+}
+
+.field-max {
+  font-style: normal;
+  font-weight: 500;
+  color: var(--muted);
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.size-limit-panel {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.85rem;
+  margin: 0.9rem 0 0;
+  padding: 1rem 1.05rem;
+  border-radius: 14px;
+  border: 1px solid #f0b4ae;
+  background:
+    linear-gradient(135deg, rgba(180, 35, 24, 0.06), transparent 55%),
+    #fff7f6;
+  color: #3f1512;
+}
+
+.size-limit-panel[hidden] {
+  display: none !important;
+}
+
+.size-limit-icon {
+  flex: 0 0 auto;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  background: #fff;
+  border: 1px solid #f0b4ae;
+  color: #b42318;
+}
+
+.size-limit-copy {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.size-limit-copy h3 {
+  margin: 0 0 0.25rem;
+  font-family: var(--display);
+  font-size: 1.05rem;
+  letter-spacing: -0.02em;
+  color: #1a1a1a;
+}
+
+.size-limit-copy p {
+  margin: 0;
+  color: #6b4a47;
+  font-size: 0.95rem;
+  line-height: 1.45;
+}
+
+.size-limit-panel .ghost.small {
+  flex: 0 0 auto;
+  align-self: center;
+}
+
 .admin-body {
   padding: 0 0 2.5rem;
 }
@@ -1586,6 +1689,36 @@ a.nav-btn-dark {
   background: #141414;
   border-color: #333;
   color: #e5e5e5;
+}
+
+[data-theme="dark"] .upload-max-badge {
+  background: #f5f5f5;
+  color: #111;
+  border-color: #f5f5f5;
+}
+
+[data-theme="dark"] .upload-max-kicker {
+  color: rgba(17, 17, 17, 0.55);
+}
+
+[data-theme="dark"] .size-limit-panel {
+  background: #1a1010;
+  border-color: #4a2020;
+  color: #f0c4c4;
+}
+
+[data-theme="dark"] .size-limit-icon {
+  background: #111;
+  border-color: #4a2020;
+  color: #fca5a5;
+}
+
+[data-theme="dark"] .size-limit-copy h3 {
+  color: #fff;
+}
+
+[data-theme="dark"] .size-limit-copy p {
+  color: #e7b4b0;
 }
 
 [data-theme="dark"] .ghost.danger {

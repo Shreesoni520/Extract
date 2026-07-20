@@ -49,7 +49,7 @@ def create_app() -> Flask:
 
         session["flash"] = {
             "type": "error",
-            "text": f"File is too large (max {cfg.max_upload_label()}).",
+            "text": f"File is too large. Maximum upload size is {cfg.max_upload_label()}.",
         }
         session.permanent = True
         session.modified = True

@@ -10,9 +10,12 @@
   const fileInput = document.getElementById('fileInput');
   const fileName = document.getElementById('fileName');
   const uploadForm = document.getElementById('uploadForm');
-  const maxBytes = Number(uploadForm?.dataset?.maxBytes || 50 * 1024 * 1024);
-  const maxLabel = uploadForm?.dataset?.maxLabel || '50 MB';
+  const maxBytes = Number(uploadForm?.dataset?.maxBytes || 5 * 1024 * 1024 * 1024);
+  const maxLabel = uploadForm?.dataset?.maxLabel || '5 GB';
   const defaultFileHint = `or click to browse · max ${maxLabel}`;
+  const sizeLimitPanel = document.getElementById('sizeLimitPanel');
+  const sizeLimitText = document.getElementById('sizeLimitText');
+  const sizeLimitDismiss = document.getElementById('sizeLimitDismiss');
 
   let lastId = 0;
   let known = new Set();
@@ -26,6 +29,28 @@
   const WATCH_MS = 500;   // same idea as live avatar updates — check often
   const FULL_POLL_MS = 4000; // occasional full sync for timers
 
+  function formatFileSize(bytes) {
+    const mb = bytes / (1024 * 1024);
+    if (mb >= 1024) return `${(mb / 1024).toFixed(2)} GB`;
+    return `${mb.toFixed(bytes > 1024 * 1024 ? 1 : 2)} MB`;
+  }
+
+  function showSizeLimitMessage(file) {
+    if (!sizeLimitPanel) return;
+    const sizeText = file ? formatFileSize(file.size) : 'too large';
+    if (sizeLimitText) {
+      sizeLimitText.innerHTML =
+        `Your file is <strong>${sizeText}</strong>. We can’t upload that much on this site. ` +
+        `Please pick a file up to <strong>${maxLabel}</strong> and try again.`;
+    }
+    sizeLimitPanel.hidden = false;
+    sizeLimitPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  function hideSizeLimitMessage() {
+    if (sizeLimitPanel) sizeLimitPanel.hidden = true;
+  }
+
   function setFileLabel(file) {
     if (!fileName || !dropzone) return;
     if (!file) {
@@ -33,20 +58,23 @@
       dropzone.classList.remove('has-file');
       return;
     }
-    const mb = file.size / (1024 * 1024);
-    const sizeText = mb >= 1024
-      ? `${(mb / 1024).toFixed(2)} GB`
-      : `${mb.toFixed(file.size > 1024 * 1024 ? 1 : 2)} MB`;
-    fileName.textContent = `${file.name} · ${sizeText}`;
+    fileName.textContent = `${file.name} · ${formatFileSize(file.size)}`;
     dropzone.classList.add('has-file');
   }
 
   function rejectIfTooLarge(file) {
-    if (!file || file.size <= maxBytes) return false;
-    alert(`File is too large (max ${maxLabel}). Pick a smaller file.`);
+    if (!file || file.size <= maxBytes) {
+      hideSizeLimitMessage();
+      return false;
+    }
+    showSizeLimitMessage(file);
     if (fileInput) fileInput.value = '';
     setFileLabel(null);
     return true;
+  }
+
+  if (sizeLimitDismiss) {
+    sizeLimitDismiss.addEventListener('click', hideSizeLimitMessage);
   }
 
   if (dropzone && fileInput) {
@@ -87,7 +115,7 @@
       if (!file) return;
       if (file.size > maxBytes) {
         e.preventDefault();
-        alert(`File is too large (max ${maxLabel}). Pick a smaller file.`);
+        showSizeLimitMessage(file);
       }
     });
   }

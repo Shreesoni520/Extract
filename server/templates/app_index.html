@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Sora:wght@500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/Extract/assets/css/dot-cursor.css?v=1" />
-  <link rel="stylesheet" href="/Extract/assets/css/app.css?v=18" />
+  <link rel="stylesheet" href="/Extract/assets/css/app.css?v=19" />
   {% include 'partials/theme-head.html' %}
 </head>
 <body class="admin-body">
@@ -23,10 +23,32 @@
 
   <main class="admin-grid">
     <section class="panel upload-panel">
-      <h2>Upload file</h2>
-      <p class="hint">Choose if the file needs a password, or leave it open for anyone. Max size: {{ max_upload_label }}{% if on_vercel %} on this host (use local app for up to 5 GB){% endif %}.</p>
+      <div class="upload-panel-head">
+        <h2>Upload file</h2>
+        <div class="upload-max-badge" title="Maximum file size allowed on this host">
+          <span class="upload-max-kicker">Max upload</span>
+          <strong class="upload-max-value">{{ max_upload_label }}</strong>
+        </div>
+      </div>
+      <p class="hint">Choose if the file needs a password, or leave it open for anyone.{% if on_vercel %} This host allows up to {{ max_upload_label }}. For bigger files (up to 5 GB), use the local app.{% else %} You can upload up to <strong>{{ max_upload_label }}</strong> per file.{% endif %}</p>
       {% if message %}<div class="alert ok">{{ message }}</div>{% endif %}
-      {% if error %}<div class="alert">{{ error }}</div>{% endif %}
+      {% if error %}<div class="alert" id="serverUploadError">{{ error }}</div>{% endif %}
+
+      <div id="sizeLimitPanel" class="size-limit-panel" hidden role="alert">
+        <div class="size-limit-icon" aria-hidden="true">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/>
+            <path d="M12 7.5v6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+            <circle cx="12" cy="16.5" r="1" fill="currentColor"/>
+          </svg>
+        </div>
+        <div class="size-limit-copy">
+          <h3>File is too large</h3>
+          <p id="sizeLimitText">This file can’t be uploaded. The maximum size on this site is <strong>{{ max_upload_label }}</strong>.</p>
+        </div>
+        <button type="button" class="ghost small" id="sizeLimitDismiss">Got it</button>
+      </div>
+
       <form method="post" action="/Extract/app/" enctype="multipart/form-data" class="upload-form" id="uploadForm" data-max-bytes="{{ max_upload_bytes }}" data-max-label="{{ max_upload_label }}">
         <input type="hidden" name="action" value="upload" />
         <label>
@@ -38,7 +60,7 @@
           <textarea name="description" rows="3" placeholder="Short note for visitors"></textarea>
         </label>
         <div class="file-field">
-          <span class="field-label">File</span>
+          <span class="field-label">File <em class="field-max">· max {{ max_upload_label }}</em></span>
           <label class="dropzone" id="dropzone" for="fileInput">
             <input id="fileInput" type="file" name="file" required />
             <span class="dropzone-icon" aria-hidden="true">
@@ -127,7 +149,7 @@
   <audio id="ping" preload="auto">
     <source src="/Extract/assets/sfx/notify.wav" type="audio/wav" />
   </audio>
-  <script src="/Extract/assets/js/app.js?v=17"></script>
+  <script src="/Extract/assets/js/app.js?v=18"></script>
   {% set skip_floating_theme = true %}
   {% include 'partials/theme-foot.html' %}
 </body>

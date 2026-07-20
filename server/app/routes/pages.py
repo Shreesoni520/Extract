@@ -160,7 +160,8 @@ def admin_upload():
             declared = request.content_length
             if declared is not None and declared > cfg.MAX_UPLOAD_BYTES + (2 * 1024 * 1024):
                 return _flash_redirect(
-                    "error", f"File is too large (max {cfg.max_upload_label()})."
+                    "error",
+                    f"File is too large. Maximum upload size is {cfg.max_upload_label()}.",
                 )
 
             original_name = file.filename
@@ -192,7 +193,8 @@ def admin_upload():
                 except OSError:
                     pass
                 return _flash_redirect(
-                    "error", f"File is too large (max {cfg.max_upload_label()})."
+                    "error",
+                    f"File is too large. Maximum upload size is {cfg.max_upload_label()}.",
                 )
 
             mime = detect_mime(dest, file.mimetype or "application/octet-stream")
