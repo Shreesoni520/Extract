@@ -18,9 +18,9 @@ UNLOCK_TTL_SECONDS = int(os.environ.get("UNLOCK_TTL_SECONDS", "300"))
 PASSWORD_MIN_LENGTH = 8
 
 # Vercel serverless request body limit is ~4.5 MB — stay under it there.
-# Local XAMPP can keep the full 50 MB.
-_VERCEL_MAX = 4 * 1024 * 1024  # 4 MB
-_LOCAL_MAX = 50 * 1024 * 1024  # 50 MB
+# Local Flask/XAMPP can accept large files (streamed to disk).
+_VERCEL_MAX = 4 * 1024 * 1024  # 4 MB (platform hard limit)
+_LOCAL_MAX = 5 * 1024 * 1024 * 1024  # 5 GB
 if os.environ.get("MAX_UPLOAD_BYTES"):
     MAX_UPLOAD_BYTES = int(os.environ["MAX_UPLOAD_BYTES"])
 elif ON_VERCEL:
@@ -29,6 +29,11 @@ else:
     MAX_UPLOAD_BYTES = _LOCAL_MAX
 
 def max_upload_label() -> str:
+    gb = MAX_UPLOAD_BYTES / (1024 * 1024 * 1024)
+    if gb >= 1:
+        if abs(gb - round(gb)) < 0.05:
+            return f"{int(round(gb))} GB"
+        return f"{gb:.1f} GB"
     mb = MAX_UPLOAD_BYTES / (1024 * 1024)
     if mb >= 1 and abs(mb - round(mb)) < 0.05:
         return f"{int(round(mb))} MB"

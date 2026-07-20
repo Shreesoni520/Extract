@@ -24,7 +24,7 @@
   <main class="admin-grid">
     <section class="panel upload-panel">
       <h2>Upload file</h2>
-      <p class="hint">Choose if the file needs a password, or leave it open for anyone. Max size: {{ max_upload_label }}{% if on_vercel %} (hosting limit){% endif %}.</p>
+      <p class="hint">Choose if the file needs a password, or leave it open for anyone. Max size: {{ max_upload_label }}{% if on_vercel %} on this host (use local app for up to 5 GB){% endif %}.</p>
       {% if message %}<div class="alert ok">{{ message }}</div>{% endif %}
       {% if error %}<div class="alert">{{ error }}</div>{% endif %}
       <form method="post" action="/Extract/app/" enctype="multipart/form-data" class="upload-form" id="uploadForm" data-max-bytes="{{ max_upload_bytes }}" data-max-label="{{ max_upload_label }}">
@@ -127,7 +127,7 @@
   <audio id="ping" preload="auto">
     <source src="/Extract/assets/sfx/notify.wav" type="audio/wav" />
   </audio>
-  <script src="/Extract/assets/js/app.js?v=16"></script>
+  <script src="/Extract/assets/js/app.js?v=17"></script>
   {% set skip_floating_theme = true %}
   {% include 'partials/theme-foot.html' %}
 </body>

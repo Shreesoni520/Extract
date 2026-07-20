@@ -33,8 +33,11 @@
       dropzone.classList.remove('has-file');
       return;
     }
-    const mb = (file.size / (1024 * 1024)).toFixed(file.size > 1024 * 1024 ? 1 : 2);
-    fileName.textContent = `${file.name} · ${mb} MB`;
+    const mb = file.size / (1024 * 1024);
+    const sizeText = mb >= 1024
+      ? `${(mb / 1024).toFixed(2)} GB`
+      : `${mb.toFixed(file.size > 1024 * 1024 ? 1 : 2)} MB`;
+    fileName.textContent = `${file.name} · ${sizeText}`;
     dropzone.classList.add('has-file');
   }
 

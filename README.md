@@ -20,9 +20,9 @@ Built by **Krishna**.
 2. Double-click **`start-site.bat`** (keeps the Python server running).
 3. Open: **http://127.0.0.1:5000/Extract/**
 
-Optional: with Apache running (and proxy enabled), **http://localhost/Extract/** also works.
+Local uploads allow up to **5 GB**. Vercel hosting is limited to about **4 MB** by the platform.
 
-More detail: `server/README.md`
+Optional: with Apache running (and proxy enabled), **http://localhost/Extract/** also works. For very large uploads, prefer the `:5000` URL.
 
 ---
 
@@ -35,7 +35,7 @@ More detail: `server/README.md`
 | **Browse files** | See their active uploads (paged list, 4 per page) |
 | **Request access** | Ask for a 6-character unlock code (valid ~5 minutes) |
 | **View / Download** | After unlock, access lasts ~5 minutes; owner can lock again anytime |
-| **Upload** | Add files with title + description (up to 50 MB) |
+| **Upload** | Add files with title + description (up to **5 GB** locally; ~4 MB on Vercel) |
 | **Protect files** | Require password, hide/show, copy link, lock everyone out, delete |
 | **Live requests** | Owner sees access requests with toast + sound, copy code, timers |
 | **Account** | Change username, password, and avatar |

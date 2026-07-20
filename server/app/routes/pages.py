@@ -156,10 +156,9 @@ def admin_upload():
             if not file or not file.filename:
                 return _flash_redirect("error", "Choose a file to upload.")
 
-            file.seek(0, os.SEEK_END)
-            size = file.tell()
-            file.seek(0)
-            if size > cfg.MAX_UPLOAD_BYTES:
+            # Prefer Content-Length when present (avoids reading huge bodies twice)
+            declared = request.content_length
+            if declared is not None and declared > cfg.MAX_UPLOAD_BYTES + (2 * 1024 * 1024):
                 return _flash_redirect(
                     "error", f"File is too large (max {cfg.max_upload_label()})."
                 )
@@ -172,12 +171,36 @@ def admin_upload():
             )
             dest = Path(cfg.UPLOAD_DIR) / stored
             try:
+                # Stream to disk (Werkzeug spills large bodies to a temp file)
                 file.save(dest)
             except OSError:
                 return _flash_redirect("error", "Upload failed — could not save the file.")
 
+            try:
+                size = dest.stat().st_size
+            except OSError:
+                size = 0
+            if size < 1:
+                try:
+                    dest.unlink()
+                except OSError:
+                    pass
+                return _flash_redirect("error", "Upload failed — empty file.")
+            if size > cfg.MAX_UPLOAD_BYTES:
+                try:
+                    dest.unlink()
+                except OSError:
+                    pass
+                return _flash_redirect(
+                    "error", f"File is too large (max {cfg.max_upload_label()})."
+                )
+
             mime = detect_mime(dest, file.mimetype or "application/octet-stream")
             if me_id < 1:
+                try:
+                    dest.unlink()
+                except OSError:
+                    pass
                 return _flash_redirect("error", "Not logged in.")
             require_password = 1 if request.form.get("require_password") else 0
             try:
