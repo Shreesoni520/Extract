@@ -36,10 +36,11 @@ def create_app() -> Flask:
 
     @app.before_request
     def _ensure_visitor():
-        # Touch visitor cookie on most requests under /Extract
+        # Touch visitor cookie on app routes
         from flask import request
 
-        if request.path.startswith(cfg.URL_PREFIX):
+        path = request.path or "/"
+        if path == "/" or path.startswith(cfg.URL_PREFIX or "/"):
             visitor_token()
 
     @app.after_request
@@ -54,6 +55,14 @@ def create_app() -> Flask:
     @app.route(f"{cfg.URL_PREFIX}/favicon.ico")
     def extract_favicon():
         return send_from_directory(str(cfg.PROJECT_ROOT), "favicon.ico")
+
+    from flask import redirect
+
+    # So https://your-app.vercel.app/ is not a blank 404
+    @app.route("/")
+    def root_redirect():
+        target = f"{cfg.URL_PREFIX}/" if cfg.URL_PREFIX else "/"
+        return redirect(target)
 
     from .routes.pages import pages_bp
     from .routes.api import api_bp

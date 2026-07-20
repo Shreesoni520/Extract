@@ -629,21 +629,30 @@ def mark_notifications():
 
     with conn.cursor() as cur:
         if mark_all:
+            # Subquery form works on both MySQL and SQLite
             cur.execute(
-                "UPDATE notifications n "
-                "JOIN access_requests ar ON ar.id = n.access_request_id "
-                "JOIN items i ON i.id = ar.item_id "
-                "SET n.is_read = 1 "
-                "WHERE n.is_read = 0 AND i.admin_id = %s",
+                "UPDATE notifications SET is_read = 1 "
+                "WHERE is_read = 0 AND id IN ("
+                "  SELECT id FROM ("
+                "    SELECT n.id AS id FROM notifications n "
+                "    JOIN access_requests ar ON ar.id = n.access_request_id "
+                "    JOIN items i ON i.id = ar.item_id "
+                "    WHERE i.admin_id = %s"
+                "  ) AS owned"
+                ")",
                 (me_id,),
             )
         elif nid > 0:
             cur.execute(
-                "UPDATE notifications n "
-                "JOIN access_requests ar ON ar.id = n.access_request_id "
-                "JOIN items i ON i.id = ar.item_id "
-                "SET n.is_read = 1 "
-                "WHERE n.id = %s AND i.admin_id = %s",
+                "UPDATE notifications SET is_read = 1 "
+                "WHERE id = %s AND id IN ("
+                "  SELECT id FROM ("
+                "    SELECT n.id AS id FROM notifications n "
+                "    JOIN access_requests ar ON ar.id = n.access_request_id "
+                "    JOIN items i ON i.id = ar.item_id "
+                "    WHERE i.admin_id = %s"
+                "  ) AS owned"
+                ")",
                 (nid, me_id),
             )
         else:
