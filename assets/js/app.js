@@ -77,6 +77,14 @@
     sizeLimitDismiss.addEventListener('click', hideSizeLimitMessage);
   }
 
+  // Demo: /Extract/app/?show_limit=1 shows the too-large panel without picking a file
+  try {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('show_limit') === '1') {
+      showSizeLimitMessage({ size: maxBytes + (1200 * 1024 * 1024) });
+    }
+  } catch (_) {}
+
   if (dropzone && fileInput) {
     fileInput.addEventListener('change', () => {
       const file = fileInput.files?.[0] || null;
