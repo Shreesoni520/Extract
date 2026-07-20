@@ -44,7 +44,10 @@ pages_bp = Blueprint("pages", __name__)
 
 
 def _flash_redirect(flash_type: str, text: str):
+    # Keep auth keys while setting flash (never wipe the login session here)
     session["flash"] = {"type": flash_type, "text": text}
+    session.permanent = True
+    session.modified = True
     return redirect(f"{cfg.URL_PREFIX}/app/")
 
 
@@ -166,28 +169,39 @@ def admin_upload():
                 f".{safe_ext.lower()}" if safe_ext else ""
             )
             dest = Path(cfg.UPLOAD_DIR) / stored
-            file.save(dest)
+            try:
+                file.save(dest)
+            except OSError:
+                return _flash_redirect("error", "Upload failed — could not save the file.")
 
             mime = detect_mime(dest, file.mimetype or "application/octet-stream")
             if me_id < 1:
                 return _flash_redirect("error", "Not logged in.")
             require_password = 1 if request.form.get("require_password") else 0
-            with conn.cursor() as cur:
-                cur.execute(
-                    "INSERT INTO items "
-                    "(admin_id, title, description, filename, original_name, mime_type, file_size, require_password) "
-                    "VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
-                    (
-                        me_id,
-                        title,
-                        description if description else None,
-                        stored,
-                        original_name,
-                        mime,
-                        size,
-                        require_password,
-                    ),
-                )
+            try:
+                with conn.cursor() as cur:
+                    cur.execute(
+                        "INSERT INTO items "
+                        "(admin_id, title, description, filename, original_name, mime_type, file_size, require_password) "
+                        "VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
+                        (
+                            me_id,
+                            title,
+                            description if description else None,
+                            stored,
+                            original_name,
+                            mime,
+                            size,
+                            require_password,
+                        ),
+                    )
+            except Exception:
+                if dest.is_file():
+                    try:
+                        dest.unlink()
+                    except OSError:
+                        pass
+                return _flash_redirect("error", "Upload failed — database error.")
             return _flash_redirect("ok", "File uploaded.")
 
         if action == "toggle_password":

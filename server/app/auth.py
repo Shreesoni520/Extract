@@ -73,17 +73,23 @@ def admin_logged_in() -> bool:
         return False
     if getattr(g, "_admin_ok", None) is not None:
         return g._admin_ok
-    conn = get_db()
-    with conn.cursor() as cur:
-        cur.execute(
-            "SELECT id, username FROM admins WHERE id = %s LIMIT 1", (admin_id,)
-        )
-        row = cur.fetchone()
+    try:
+        conn = get_db()
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT id, username FROM admins WHERE id = %s LIMIT 1", (admin_id,)
+            )
+            row = cur.fetchone()
+    except Exception:
+        # DB blip — keep the session; don't bounce to login
+        g._admin_ok = True
+        return True
     if not row:
         logout_admin()
         g._admin_ok = False
         return False
     session["admin_username"] = str(row["username"])
+    session.permanent = True
     g._admin_ok = True
     return True
 

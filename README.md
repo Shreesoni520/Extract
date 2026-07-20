@@ -14,19 +14,13 @@ Built by **Krishna**.
 
 ---
 
-## Quick start
+## Quick start (local)
 
-1. Start MySQL in XAMPP.
-2. Import `database/shrees_extractions.sql` if the DB is empty.
-3. Install and run:
+1. Start **MySQL** in XAMPP.
+2. Double-click **`start-site.bat`** (keeps the Python server running).
+3. Open: **http://127.0.0.1:5000/Extract/**
 
-```bat
-cd /d C:\xampp\htdocs
-python -m pip install -r "Shree's Extractions\server\requirements.txt"
-python "Shree's Extractions\server\run.py"
-```
-
-4. Open: **http://127.0.0.1:5000/Extract/**
+Optional: with Apache running (and proxy enabled), **http://localhost/Extract/** also works.
 
 More detail: `server/README.md`
 

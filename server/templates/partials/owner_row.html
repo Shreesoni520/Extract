@@ -9,13 +9,13 @@
     </p>
   </div>
   <div class="item-actions">
-    <form method="post">
+    <form method="post" action="/Extract/app/">
       <input type="hidden" name="action" value="toggle_password" />
       <input type="hidden" name="item_id" value="{{ item.id }}" />
       <button type="submit" class="ghost small">{{ 'Make open' if item.require_password else 'Need password' }}</button>
     </form>
     {% if item.unlocked_count|int > 0 %}
-    <form method="post">
+    <form method="post" action="/Extract/app/">
       <input type="hidden" name="action" value="lock_all" />
       <input type="hidden" name="item_id" value="{{ item.id }}" />
       <button type="submit" class="ghost small">Lock again</button>
@@ -29,12 +29,12 @@
       data-mime="{{ item.mime_type }}"
     >Copy link</button>
     {% endif %}
-    <form method="post">
+    <form method="post" action="/Extract/app/">
       <input type="hidden" name="action" value="toggle" />
       <input type="hidden" name="item_id" value="{{ item.id }}" />
       <button type="submit" class="ghost small">{{ 'Hide' if item.is_active else 'Show' }}</button>
     </form>
-    <form method="post" onsubmit="return confirm('Delete this file?');">
+    <form method="post" action="/Extract/app/" onsubmit="return confirm('Delete this file?');">
       <input type="hidden" name="action" value="delete" />
       <input type="hidden" name="item_id" value="{{ item.id }}" />
       <button type="submit" class="ghost small btn-delete">Delete</button>

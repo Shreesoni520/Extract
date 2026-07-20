@@ -27,7 +27,7 @@
       <p class="hint">Choose if the file needs a password, or leave it open for anyone.</p>
       {% if message %}<div class="alert ok">{{ message }}</div>{% endif %}
       {% if error %}<div class="alert">{{ error }}</div>{% endif %}
-      <form method="post" enctype="multipart/form-data" class="upload-form">
+      <form method="post" action="/Extract/app/" enctype="multipart/form-data" class="upload-form">
         <input type="hidden" name="action" value="upload" />
         <label>
           <span>Title</span>

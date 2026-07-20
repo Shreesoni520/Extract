@@ -64,6 +64,13 @@ def users():
 
     conn = get_db()
     with conn.cursor() as cur:
+        # Detect if the only hit would be the current user (common “broken search” confusion)
+        cur.execute(
+            "SELECT id FROM admins WHERE id = %s AND LOWER(username) LIKE %s LIMIT 1",
+            (me_id, "%" + q.lower() + "%"),
+        )
+        matched_self = cur.fetchone() is not None
+
         cur.execute(
             "SELECT a.id, a.username, a.avatar, a.created_at, "
             "       (SELECT COUNT(*) FROM items i WHERE i.admin_id = a.id AND i.is_active = 1) AS file_count "
@@ -87,7 +94,13 @@ def users():
             }
         )
     return json_response(
-        {"ok": True, "query": q, "min_length": min_len, "users": users_out}
+        {
+            "ok": True,
+            "query": q,
+            "min_length": min_len,
+            "users": users_out,
+            "matched_self": bool(matched_self) and len(users_out) == 0,
+        }
     )
 
 

@@ -14,7 +14,7 @@ From `C:\xampp\htdocs` (avoids apostrophe path issues in some shells):
 
 ```bat
 cd /d C:\xampp\htdocs
-python -m pip install -r "Shree's Extractions\server\requirements.txt"
+python -m pip install -r "Shree's Extractions\requirements.txt"
 ```
 
 ## Run

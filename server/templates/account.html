@@ -148,7 +148,7 @@
             <img id="avatarPreview" src="{{ avatar_src }}" alt="Profile" />
             <p class="hint">JPG, PNG, WEBP or GIF · max 3 MB</p>
           </div>
-          <form method="post" enctype="multipart/form-data" class="login-form" id="avatarForm">
+          <form method="post" action="/Extract/app/account.php" enctype="multipart/form-data" class="login-form" id="avatarForm">
             <input type="hidden" name="action" value="avatar" />
             <label class="avatar-pick" id="avatarPick" for="avatarInput">
               <input id="avatarInput" type="file" name="avatar" accept="image/*" required />
@@ -162,7 +162,7 @@
         <section class="account-box">
           <h1>Account</h1>
           <p class="sub">Change your username anytime. Only fill the password fields if you want a new password.</p>
-          <form method="post" class="login-form" autocomplete="off" id="accountForm">
+          <form method="post" action="/Extract/app/account.php" class="login-form" autocomplete="off" id="accountForm">
             <input type="hidden" name="action" value="account" />
             <label>
               <span>Username</span>

@@ -750,10 +750,11 @@
     `;
   }
 
-  function renderUsers(users, query) {
+  function renderUsers(users, query, meta) {
     userCache = users;
     const q = (query || '').trim();
     const tooShort = q.length > 0 && q.length < MIN_SEARCH_LEN;
+    const matchedSelf = !!(meta && meta.matched_self);
 
     if (searchMeta) {
       searchMeta.hidden = false;
@@ -763,6 +764,8 @@
         searchMeta.textContent = `Type ${MIN_SEARCH_LEN - q.length} more character${MIN_SEARCH_LEN - q.length === 1 ? '' : 's'} to search.`;
       } else if (users.length) {
         searchMeta.textContent = `Found ${users.length} person(s) for “${q}”`;
+      } else if (matchedSelf) {
+        searchMeta.textContent = `“${q}” is you — search for someone else’s username.`;
       } else {
         searchMeta.textContent = `No users found for “${q}”`;
       }
@@ -777,8 +780,10 @@
           grid.innerHTML = '<div class="muted">No suggestions yet. Start typing a username above.</div>';
         } else if (tooShort) {
           grid.innerHTML = '<div class="muted">Keep typing to search for people.</div>';
+        } else if (matchedSelf) {
+          grid.innerHTML = '<div class="muted">You can’t open your own profile here. Ask a friend to sign up, then search their name. Your files are under Upload files.</div>';
         } else {
-          grid.innerHTML = '<div class="muted">No matching usernames.</div>';
+          grid.innerHTML = '<div class="muted">No matching usernames. They need an account first.</div>';
         }
       }
       return;
@@ -830,7 +835,7 @@
       }
       const data = await res.json();
       if (!data.ok) throw new Error('Failed');
-      renderUsers(data.users || [], currentQuery);
+      renderUsers(data.users || [], currentQuery, data);
     } catch (_) {
       if (userGrid) userGrid.innerHTML = '';
       hideFilePager();

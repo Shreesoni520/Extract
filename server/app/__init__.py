@@ -23,6 +23,11 @@ def create_app() -> Flask:
     app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(days=14)
     app.config["SESSION_COOKIE_HTTPONLY"] = True
     app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+    app.config["SESSION_COOKIE_PATH"] = "/"
+    app.config["SESSION_REFRESH_EACH_REQUEST"] = True
+    # Keep cookie on http://127.0.0.1 and http://localhost without Secure
+    app.config["SESSION_COOKIE_SECURE"] = False
+    app.config["SESSION_COOKIE_NAME"] = "se_session"
 
     app.teardown_appcontext(close_db)
 
