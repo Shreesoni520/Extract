@@ -1,15 +1,15 @@
 :root {
-  --bg: #f3f5f7;
+  --bg: #eef2f1;
   --surface: #ffffff;
-  --ink: #12151a;
-  --muted: #5c6570;
-  --line: #dce1e6;
-  --accent: #0f5c5c;
-  --accent-soft: #e6f2f2;
+  --ink: #101816;
+  --muted: #5a6662;
+  --line: #d5ddd9;
+  --accent: #0d4f45;
+  --accent-soft: #e4f0ed;
   --danger: #b42318;
-  --ok: #0f5c5c;
-  --radius: 14px;
-  --shadow: 0 1px 2px rgba(18, 21, 26, 0.04), 0 12px 32px rgba(18, 21, 26, 0.06);
+  --ok: #0d4f45;
+  --radius: 16px;
+  --shadow: 0 1px 2px rgba(16, 24, 22, 0.04), 0 16px 40px rgba(16, 24, 22, 0.07);
   --font: "Figtree", system-ui, sans-serif;
   --display: "Sora", system-ui, sans-serif;
   --gutter: clamp(1.25rem, 4vw, 2.5rem);
@@ -23,16 +23,17 @@ body {
   font-family: var(--font);
   color: var(--ink);
   background:
-    radial-gradient(800px 360px at 100% 0%, rgba(15, 92, 92, 0.08), transparent 55%),
-    var(--bg);
+    radial-gradient(920px 420px at 92% -8%, rgba(13, 79, 69, 0.14), transparent 58%),
+    radial-gradient(700px 380px at -10% 110%, rgba(13, 79, 69, 0.07), transparent 52%),
+    linear-gradient(180deg, #f5f8f7 0%, var(--bg) 100%);
   line-height: 1.5;
 }
 
 .brand-mark {
-  margin: 0 0 0.35rem;
+  margin: 0 0 0.55rem;
   font-family: var(--display);
   font-weight: 700;
-  font-size: 0.8rem;
+  font-size: 0.82rem;
   letter-spacing: -0.02em;
   color: var(--accent);
 }
@@ -42,16 +43,31 @@ body {
   display: grid;
   place-items: center;
   padding: 1.5rem;
+  position: relative;
 }
 
 .login-wrap {
-  width: min(400px, 100%);
-  padding: 1.75rem;
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: 18px;
+  width: min(420px, 100%);
+  padding: 2rem 1.85rem 1.85rem;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(213, 221, 217, 0.95);
+  border-radius: 22px;
   box-shadow: var(--shadow);
-  animation: fade-up 0.45s ease both;
+  backdrop-filter: blur(10px);
+  animation: fade-up 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.login-wrap h1 {
+  font-size: clamp(1.55rem, 4vw, 1.85rem);
+}
+
+.field-hint {
+  display: block;
+  margin-top: 0.2rem;
+  font-style: normal;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--muted);
 }
 
 .login-wrap h1,
@@ -520,12 +536,12 @@ a.nav-btn-dark {
 }
 
 .panel {
-  background: var(--surface);
+  background: rgba(255, 255, 255, 0.94);
   border: 1px solid var(--line);
-  border-radius: var(--radius);
-  padding: 1.15rem;
+  border-radius: calc(var(--radius) + 2px);
+  padding: 1.25rem 1.2rem;
   box-shadow: var(--shadow);
-  animation: fade-in 0.35s ease both;
+  animation: fade-in 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 .upload-panel,
@@ -1536,7 +1552,14 @@ a.nav-btn-dark {
 }
 
 [data-theme="dark"] body {
-  background: var(--bg);
+  background:
+    radial-gradient(900px 420px at 90% 0%, rgba(255, 255, 255, 0.04), transparent 55%),
+    var(--bg);
+}
+
+[data-theme="dark"] .login-wrap,
+[data-theme="dark"] .panel {
+  background: rgba(17, 17, 17, 0.92);
 }
 
 [data-theme="dark"] input,

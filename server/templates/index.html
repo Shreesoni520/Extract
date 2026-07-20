@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Sora:wght@600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/Extract/assets/css/dot-cursor.css?v=1" />
-  <link rel="stylesheet" href="/Extract/assets/css/public.css?v=36" />
+  <link rel="stylesheet" href="/Extract/assets/css/public.css?v=37" />
   {% include 'partials/theme-head.html' %}
 </head>
 <body class="view-landing" data-logged-in="{{ '1' if logged_in else '0' }}">
@@ -21,7 +21,7 @@
     <div class="hero-inner">
       <h1 class="brand-hero">{{ app_name }}</h1>
       {% if logged_in %}
-        <p class="hero-line">Hi {{ username }}. Search people and open their files.</p>
+        <p class="hero-line">Hi {{ username }}. Find people and open their files.</p>
         <div class="hero-actions">
           <button class="btn" id="browseBtn" type="button">Find people</button>
           <a class="btn btn-ghost" href="/Extract/app/">Upload files</a>
@@ -32,7 +32,7 @@
           <a href="/Extract/app/logout.php">Logout</a>
         </p>
       {% else %}
-        <p class="hero-line">Sign in or sign up first. Then you can find people and use files.</p>
+        <p class="hero-line">Private file sharing between people you choose.</p>
         <div class="hero-actions">
           <a class="btn" href="/Extract/app/login.php">Sign in</a>
           <a class="btn btn-ghost" href="/Extract/app/register.php">Sign up</a>

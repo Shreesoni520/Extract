@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Sora:wght@500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/Extract/assets/css/dot-cursor.css?v=1" />
-  <link rel="stylesheet" href="/Extract/assets/css/app.css?v=6" />
+  <link rel="stylesheet" href="/Extract/assets/css/app.css?v=20" />
   {% include 'partials/theme-head.html' %}
   <style>
     .account-page {
@@ -161,13 +161,14 @@
 
         <section class="account-box">
           <h1>Account</h1>
-          <p class="sub">Change your username anytime. Only fill the password fields if you want a new password.</p>
+          <p class="sub">Change your username anytime. Letters and numbers only — no dots. Only fill the password fields if you want a new password.</p>
           <form method="post" action="/Extract/app/account.php" class="login-form" autocomplete="off" id="accountForm">
             <input type="hidden" name="action" value="account" />
             <label>
               <span>Username</span>
               <input type="text" name="new_username" required minlength="3" maxlength="32"
-                     pattern="[a-z0-9._-]+" value="{{ current_username }}"
+                     pattern="[a-z0-9]{3,32}" title="Lowercase letters and numbers only"
+                     value="{{ current_username }}"
                      autocapitalize="off" autocorrect="off" spellcheck="false" />
             </label>
             <label>

@@ -14,8 +14,8 @@ from .helpers import json_response
 
 PASSWORD_MIN_LENGTH = cfg.PASSWORD_MIN_LENGTH
 
-_USERNAME_RE = re.compile(r"^[a-z0-9][a-z0-9._-]{2,31}$")
-_REPEATED_SEP_RE = re.compile(r"(\.\.|__|--)")
+# Letters and numbers only — no dots, underscores, or hyphens.
+_USERNAME_RE = re.compile(r"^[a-z0-9]{3,32}$")
 
 
 def _php_compatible_hash(password: str) -> str:
@@ -121,11 +121,9 @@ def parse_username(raw: str) -> tuple[str | None, str | None]:
     if not _USERNAME_RE.match(user):
         return (
             None,
-            "Use 3–32 characters: lowercase letters, numbers, and you can use "
-            "dots, underscores, or hyphens. Must start with a letter or number.",
+            "Use 3–32 lowercase letters and numbers only — no dots, spaces, "
+            "underscores, or hyphens.",
         )
-    if _REPEATED_SEP_RE.search(user):
-        return None, "Username cannot use repeated dots, underscores, or hyphens."
     return user, None
 
 
@@ -142,37 +140,12 @@ def username_taken(normalized: str, except_id: int | None = None) -> bool:
         return bool(cur.fetchone())
 
 
-def username_dot_variant_collision(attempt: str, existing: str) -> bool:
-    attempt = attempt.strip().lower()
-    existing = existing.strip().lower()
-    if attempt == existing:
-        return True
-    attempt_base = attempt.rstrip(".")
-    existing_base = existing.rstrip(".")
-    if len(attempt_base) < 3 or attempt_base != existing_base:
-        return False
-    return attempt != attempt_base or existing != existing_base
-
-
 def username_collides(raw: str, except_id: int | None = None) -> bool:
+    """True if this exact username is already taken."""
     lower = raw.strip().lower()
     if lower == "" or len(lower) < 3:
         return False
-    if username_taken(lower, except_id):
-        return True
-    conn = get_db()
-    sql = "SELECT username FROM admins"
-    params: list = []
-    if except_id is not None:
-        sql += " WHERE id != %s"
-        params.append(except_id)
-    with conn.cursor() as cur:
-        cur.execute(sql, params)
-        rows = cur.fetchall()
-    for row in rows:
-        if username_dot_variant_collision(lower, str(row["username"])):
-            return True
-    return False
+    return username_taken(lower, except_id)
 
 
 def username_taken_message() -> str:

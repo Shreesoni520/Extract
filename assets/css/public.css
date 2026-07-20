@@ -1,14 +1,14 @@
 :root {
-  --bg: #f6f7f8;
+  --bg: #eef1f0;
   --surface: #ffffff;
-  --ink: #111111;
-  --muted: #6b7280;
-  --line: #e5e7eb;
-  --accent: #111111;
-  --accent-soft: #f3f4f6;
+  --ink: #0f1614;
+  --muted: #5c6763;
+  --line: #d6ddd9;
+  --accent: #0f1614;
+  --accent-soft: #e8eeeb;
   --danger: #b42318;
-  --radius: 12px;
-  --shadow: 0 1px 2px rgba(17, 17, 17, 0.04), 0 10px 28px rgba(17, 17, 17, 0.05);
+  --radius: 14px;
+  --shadow: 0 1px 2px rgba(15, 22, 20, 0.04), 0 14px 36px rgba(15, 22, 20, 0.06);
   --font: "Figtree", system-ui, sans-serif;
   --display: "Sora", system-ui, sans-serif;
   --gutter: clamp(1.25rem, 4vw, 2.5rem);
@@ -40,9 +40,9 @@ body.view-files { overflow: auto; }
   inset: 0;
   z-index: -1;
   background:
-    radial-gradient(900px 480px at 80% 0%, rgba(17, 17, 17, 0.04), transparent 55%),
-    radial-gradient(700px 420px at 0% 100%, rgba(17, 17, 17, 0.03), transparent 50%),
-    linear-gradient(180deg, #fafafa 0%, #f4f5f6 100%);
+    radial-gradient(1100px 560px at 85% -5%, rgba(13, 79, 69, 0.12), transparent 55%),
+    radial-gradient(800px 480px at -5% 105%, rgba(13, 79, 69, 0.08), transparent 50%),
+    linear-gradient(165deg, #f7faf8 0%, #eef2f0 48%, #e8eeeb 100%);
 }
 
 .page-veil {
@@ -100,18 +100,18 @@ body.view-files { overflow: auto; }
   color: var(--ink);
   opacity: 0;
   transform: translateY(18px);
-  animation: rise-in 0.75s cubic-bezier(0.22, 1, 0.36, 1) 0.05s forwards;
+  animation: rise-in 0.85s cubic-bezier(0.22, 1, 0.36, 1) 0.05s forwards;
 }
 
 .hero-line {
   margin: 0;
   max-width: 32rem;
   color: var(--muted);
-  font-size: clamp(1.15rem, 2.2vw, 1.35rem);
+  font-size: clamp(1.15rem, 2.2vw, 1.4rem);
   font-weight: 500;
   opacity: 0;
   transform: translateY(14px);
-  animation: rise-in 0.75s cubic-bezier(0.22, 1, 0.36, 1) 0.18s forwards;
+  animation: rise-in 0.85s cubic-bezier(0.22, 1, 0.36, 1) 0.18s forwards;
 }
 
 .hero-actions {
@@ -153,9 +153,9 @@ body.view-files { overflow: auto; }
   justify-content: center;
   gap: 0.4rem;
   border: 0;
-  border-radius: 10px;
-  padding: 0.95rem 1.4rem;
-  background: #111111;
+  border-radius: 12px;
+  padding: 0.95rem 1.45rem;
+  background: #0f1614;
   color: #fff;
   font: inherit;
   font-weight: 600;
@@ -165,13 +165,13 @@ body.view-files { overflow: auto; }
   transition: transform 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
   opacity: 0;
   transform: translateY(14px);
-  animation: rise-in 0.75s cubic-bezier(0.22, 1, 0.36, 1) 0.3s forwards;
+  animation: rise-in 0.85s cubic-bezier(0.22, 1, 0.36, 1) 0.3s forwards;
 }
 
 .btn:hover {
   transform: translateY(-2px);
   background: #000;
-  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 12px 28px rgba(15, 22, 20, 0.16);
 }
 
 .btn:active { transform: none; box-shadow: none; }
