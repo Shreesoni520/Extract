@@ -19,7 +19,8 @@ def create_app() -> Flask:
         static_folder=None,
     )
     app.secret_key = cfg.SECRET_KEY
-    app.config["MAX_CONTENT_LENGTH"] = cfg.MAX_UPLOAD_BYTES + (1 * 1024 * 1024)
+    # Do not exceed MAX_UPLOAD_BYTES (on Vercel that must stay under ~4.5 MB)
+    app.config["MAX_CONTENT_LENGTH"] = cfg.MAX_UPLOAD_BYTES
     app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(days=14)
     app.config["SESSION_COOKIE_HTTPONLY"] = True
     app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
@@ -37,7 +38,22 @@ def create_app() -> Flask:
             "app_name": cfg.APP_NAME,
             "url_prefix": cfg.URL_PREFIX,
             "password_min_length": cfg.PASSWORD_MIN_LENGTH,
+            "max_upload_bytes": cfg.MAX_UPLOAD_BYTES,
+            "max_upload_label": cfg.max_upload_label(),
+            "on_vercel": cfg.ON_VERCEL,
         }
+
+    @app.errorhandler(413)
+    def too_large(_e):
+        from flask import redirect, session
+
+        session["flash"] = {
+            "type": "error",
+            "text": f"File is too large (max {cfg.max_upload_label()}).",
+        }
+        session.permanent = True
+        session.modified = True
+        return redirect(f"{cfg.URL_PREFIX}/app/"), 303
 
     @app.before_request
     def _ensure_visitor():

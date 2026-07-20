@@ -15,8 +15,26 @@ URL_PREFIX = os.environ.get("URL_PREFIX", "/Extract")
 APP_NAME = "Shree's Extractions"
 PASSWORD_TTL_SECONDS = int(os.environ.get("PASSWORD_TTL_SECONDS", "300"))
 UNLOCK_TTL_SECONDS = int(os.environ.get("UNLOCK_TTL_SECONDS", "300"))
-MAX_UPLOAD_BYTES = int(os.environ.get("MAX_UPLOAD_BYTES", str(50 * 1024 * 1024)))
 PASSWORD_MIN_LENGTH = 8
+
+# Vercel serverless request body limit is ~4.5 MB — stay under it there.
+# Local XAMPP can keep the full 50 MB.
+_VERCEL_MAX = 4 * 1024 * 1024  # 4 MB
+_LOCAL_MAX = 50 * 1024 * 1024  # 50 MB
+if os.environ.get("MAX_UPLOAD_BYTES"):
+    MAX_UPLOAD_BYTES = int(os.environ["MAX_UPLOAD_BYTES"])
+elif ON_VERCEL:
+    MAX_UPLOAD_BYTES = _VERCEL_MAX
+else:
+    MAX_UPLOAD_BYTES = _LOCAL_MAX
+
+def max_upload_label() -> str:
+    mb = MAX_UPLOAD_BYTES / (1024 * 1024)
+    if mb >= 1 and abs(mb - round(mb)) < 0.05:
+        return f"{int(round(mb))} MB"
+    if mb >= 1:
+        return f"{mb:.1f} MB"
+    return f"{MAX_UPLOAD_BYTES // 1024} KB"
 
 SECRET_KEY = os.environ.get("SECRET_KEY", "shrees-extractions-dev-secret-change-me")
 

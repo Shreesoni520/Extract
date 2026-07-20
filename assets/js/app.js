@@ -9,6 +9,10 @@
   const dropzone = document.getElementById('dropzone');
   const fileInput = document.getElementById('fileInput');
   const fileName = document.getElementById('fileName');
+  const uploadForm = document.getElementById('uploadForm');
+  const maxBytes = Number(uploadForm?.dataset?.maxBytes || 50 * 1024 * 1024);
+  const maxLabel = uploadForm?.dataset?.maxLabel || '50 MB';
+  const defaultFileHint = `or click to browse · max ${maxLabel}`;
 
   let lastId = 0;
   let known = new Set();
@@ -25,7 +29,7 @@
   function setFileLabel(file) {
     if (!fileName || !dropzone) return;
     if (!file) {
-      fileName.textContent = 'or click to browse · max 50 MB';
+      fileName.textContent = defaultFileHint;
       dropzone.classList.remove('has-file');
       return;
     }
@@ -34,9 +38,19 @@
     dropzone.classList.add('has-file');
   }
 
+  function rejectIfTooLarge(file) {
+    if (!file || file.size <= maxBytes) return false;
+    alert(`File is too large (max ${maxLabel}). Pick a smaller file.`);
+    if (fileInput) fileInput.value = '';
+    setFileLabel(null);
+    return true;
+  }
+
   if (dropzone && fileInput) {
     fileInput.addEventListener('change', () => {
-      setFileLabel(fileInput.files?.[0] || null);
+      const file = fileInput.files?.[0] || null;
+      if (rejectIfTooLarge(file)) return;
+      setFileLabel(file);
     });
 
     ['dragenter', 'dragover'].forEach((evt) => {
@@ -56,10 +70,22 @@
     dropzone.addEventListener('drop', (e) => {
       const file = e.dataTransfer?.files?.[0];
       if (!file) return;
+      if (rejectIfTooLarge(file)) return;
       const transfer = new DataTransfer();
       transfer.items.add(file);
       fileInput.files = transfer.files;
       setFileLabel(file);
+    });
+  }
+
+  if (uploadForm) {
+    uploadForm.addEventListener('submit', (e) => {
+      const file = fileInput?.files?.[0];
+      if (!file) return;
+      if (file.size > maxBytes) {
+        e.preventDefault();
+        alert(`File is too large (max ${maxLabel}). Pick a smaller file.`);
+      }
     });
   }
 

@@ -160,7 +160,9 @@ def admin_upload():
             size = file.tell()
             file.seek(0)
             if size > cfg.MAX_UPLOAD_BYTES:
-                return _flash_redirect("error", "File is too large (max 50 MB).")
+                return _flash_redirect(
+                    "error", f"File is too large (max {cfg.max_upload_label()})."
+                )
 
             original_name = file.filename
             ext = Path(original_name).suffix.lstrip(".")
