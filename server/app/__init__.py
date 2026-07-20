@@ -25,8 +25,8 @@ def create_app() -> Flask:
     app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
     app.config["SESSION_COOKIE_PATH"] = "/"
     app.config["SESSION_REFRESH_EACH_REQUEST"] = True
-    # Keep cookie on http://127.0.0.1 and http://localhost without Secure
-    app.config["SESSION_COOKIE_SECURE"] = False
+    # Secure cookies on HTTPS (Vercel); keep off for local http://
+    app.config["SESSION_COOKIE_SECURE"] = bool(cfg.ON_VERCEL)
     app.config["SESSION_COOKIE_NAME"] = "se_session"
 
     app.teardown_appcontext(close_db)

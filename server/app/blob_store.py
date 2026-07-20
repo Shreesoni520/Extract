@@ -118,3 +118,91 @@ def safe_upload_pathname(original_name: str) -> str:
 
 def max_upload_for_host() -> int:
     return int(cfg.MAX_UPLOAD_BYTES)
+
+
+SQLITE_BLOB_PATH = "app-data/shrees-extractions.sqlite"
+
+
+def put_private_bytes(pathname: str, data: bytes, *, content_type: str = "application/octet-stream") -> str | None:
+    """Server-side overwrite put (read-write token). Returns blob URL or None."""
+    from urllib.parse import urlencode
+
+    try:
+        token = read_write_token()
+        store_id = store_id_from_token(token)
+    except RuntimeError:
+        return None
+
+    qs = urlencode({"pathname": pathname})
+    req = urllib.request.Request(
+        f"{BLOB_API}/?{qs}",
+        data=data,
+        method="PUT",
+        headers={
+            "Authorization": f"Bearer {token}",
+            "x-api-version": BLOB_API_VERSION,
+            "x-vercel-blob-access": "private",
+            "x-add-random-suffix": "0",
+            "x-allow-overwrite": "1",
+            "x-content-type": content_type,
+            "x-vercel-blob-store-id": store_id,
+        },
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=60) as resp:
+            body = json.loads(resp.read().decode("utf-8") or "{}")
+            return body.get("url")
+    except (urllib.error.URLError, TimeoutError, OSError, json.JSONDecodeError):
+        return None
+
+
+def get_private_bytes(pathname: str) -> bytes | None:
+    """Download a private blob by pathname using the read-write token."""
+    try:
+        token = read_write_token()
+        store_id = store_id_from_token(token)
+    except RuntimeError:
+        return None
+
+    url = f"https://{store_id}.private.blob.vercel-storage.com/{pathname}"
+    req = urllib.request.Request(
+        url,
+        headers={
+            "Authorization": f"Bearer {token}",
+            "x-api-version": BLOB_API_VERSION,
+        },
+        method="GET",
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=60) as resp:
+            data = resp.read()
+            return data if data else None
+    except (urllib.error.URLError, TimeoutError, OSError):
+        return None
+
+
+def restore_sqlite_from_blob(local_path) -> bool:
+    """Pull persisted SQLite from Blob into local_path. True if restored."""
+    from pathlib import Path
+
+    path = Path(local_path)
+    data = get_private_bytes(SQLITE_BLOB_PATH)
+    if not data or len(data) < 100:
+        return False
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_bytes(data)
+    return True
+
+
+def persist_sqlite_to_blob(local_path) -> bool:
+    """Push local SQLite file to Blob so it survives cold starts / redeploys."""
+    from pathlib import Path
+
+    path = Path(local_path)
+    if not path.is_file():
+        return False
+    data = path.read_bytes()
+    if len(data) < 100:
+        return False
+    return put_private_bytes(SQLITE_BLOB_PATH, data) is not None
+

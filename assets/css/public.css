@@ -64,6 +64,28 @@ body.view-files { overflow: auto; }
   animation: veil-reveal 0.55s cubic-bezier(0.77, 0, 0.18, 1) forwards;
 }
 
+.home-notice {
+  position: fixed;
+  top: 1rem;
+  left: 50%;
+  z-index: 40;
+  transform: translateX(-50%);
+  max-width: min(420px, calc(100% - 2rem));
+  padding: 0.75rem 1.1rem;
+  border-radius: 12px;
+  background: #0f1614;
+  color: #fff;
+  font-size: 0.92rem;
+  font-weight: 500;
+  text-align: center;
+  box-shadow: 0 10px 28px rgba(15, 22, 20, 0.2);
+  animation: fade-up 0.45s ease both, home-notice-out 0.4s ease 4.5s forwards;
+}
+
+@keyframes home-notice-out {
+  to { opacity: 0; transform: translateX(-50%) translateY(-8px); pointer-events: none; }
+}
+
 @keyframes veil-cover {
   from { transform: scaleY(0); }
   to { transform: scaleY(1); }

@@ -7,8 +7,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Sora:wght@500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/Extract/assets/css/dot-cursor.css?v=1" />
-  <link rel="stylesheet" href="/Extract/assets/css/app.css?v=20" />
+  <link rel="stylesheet" href="/Extract/assets/css/dot-cursor.css?v=2" />
+  <link rel="stylesheet" href="/Extract/assets/css/app.css?v=22" />
   {% include 'partials/theme-head.html' %}
 </head>
 <body class="login-body">
@@ -17,7 +17,7 @@
   <div class="login-wrap">
     <p class="brand-mark">{{ app_name }}</p>
     <h1>Create account</h1>
-    <p class="sub">Pick a simple name, then you can find people and share files.</p>
+    <p class="sub">Pick a simple name (letters and numbers only), then you’re in.</p>
     {% if error %}
       <div class="alert">{{ error }}</div>
     {% endif %}
@@ -39,7 +39,7 @@
         <span>Confirm password</span>
         <input type="password" name="confirm" required minlength="{{ password_min_length }}" />
       </label>
-      <button type="submit">Sign up</button>
+      <button type="submit">Create account</button>
     </form>
     <p class="auth-switch">
       Already have an account?

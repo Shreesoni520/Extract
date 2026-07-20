@@ -8,14 +8,18 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Sora:wght@600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/Extract/assets/css/dot-cursor.css?v=1" />
-  <link rel="stylesheet" href="/Extract/assets/css/public.css?v=37" />
+  <link rel="stylesheet" href="/Extract/assets/css/dot-cursor.css?v=2" />
+  <link rel="stylesheet" href="/Extract/assets/css/public.css?v=40" />
   {% include 'partials/theme-head.html' %}
 </head>
 <body class="view-landing" data-logged-in="{{ '1' if logged_in else '0' }}">
   {% include 'partials/dot-cursor.html' %}
   <div class="bg" aria-hidden="true"></div>
   <div class="page-veil" id="pageVeil" aria-hidden="true"></div>
+
+  {% if notice %}
+  <div class="home-notice" role="status">{{ notice }}</div>
+  {% endif %}
 
   <section class="hero" id="landing">
     <div class="hero-inner">
@@ -35,7 +39,7 @@
         <p class="hero-line">Private file sharing between people you choose.</p>
         <div class="hero-actions">
           <a class="btn" href="/Extract/app/login.php">Sign in</a>
-          <a class="btn btn-ghost" href="/Extract/app/register.php">Sign up</a>
+          <a class="btn btn-ghost" href="/Extract/app/register.php">Create account</a>
         </div>
       {% endif %}
     </div>

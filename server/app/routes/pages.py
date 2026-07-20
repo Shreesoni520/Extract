@@ -57,11 +57,13 @@ def home():
     logged_in = admin_logged_in()
     username = str(session.get("admin_username") or "")
     open_browse = logged_in and ("browse" in request.args)
+    notice = session.pop("home_notice", None) or ""
     return render_template(
         "index.html",
         logged_in=logged_in,
         username=username,
         open_browse=open_browse,
+        notice=notice,
     )
 
 
@@ -70,16 +72,26 @@ def login():
     if admin_logged_in():
         return after_login_redirect()
     error = ""
+    info = ""
+    username_value = ""
+    if request.args.get("registered") == "1":
+        info = "Account created. Sign in with your username and password."
     if request.method == "POST":
         user = (request.form.get("username") or "").strip()
         password = request.form.get("password") or ""
+        username_value = user.lower().strip()
         if user == "" or password == "":
             error = "Enter username and password."
         elif attempt_login(user, password):
             return after_login_redirect()
         else:
-            error = "Invalid credentials."
-    return render_template("login.html", error=error)
+            error = "Wrong username or password. If you just signed up, use that same name — no dots."
+    return render_template(
+        "login.html",
+        error=error,
+        info=info,
+        username_value=username_value,
+    )
 
 
 @pages_bp.route("/app/register.php", methods=["GET", "POST"])
@@ -103,8 +115,13 @@ def register():
             error = "Passwords do not match."
         elif username_collides(user):
             error = username_taken_message()
-        elif create_admin(normalized, password) and attempt_login(normalized, password):
-            return after_login_redirect()
+        elif create_admin(normalized, password):
+            if attempt_login(normalized, password):
+                session["home_notice"] = f"Welcome, {normalized} — you’re signed in."
+                session.permanent = True
+                session.modified = True
+                return after_login_redirect()
+            return redirect(f"{cfg.URL_PREFIX}/app/login.php?registered=1")
         else:
             error = "Could not create account. Try again."
     return render_template(

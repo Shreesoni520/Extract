@@ -61,12 +61,14 @@ CREATE INDEX IF NOT EXISTS idx_visitor_item ON access_requests (visitor_token, i
 CREATE INDEX IF NOT EXISTS idx_status ON access_requests (status);
 """
 
+# Restore Blob → /tmp at most once per warm serverless instance
+_sqlite_blob_hydrated = False
+
 
 def _adapt_sql(sql: str) -> str:
     """Translate MySQL-ish SQL to SQLite."""
     out = sql.replace("%s", "?")
     out = re.sub(r"\bNOW\(\)", "datetime('now')", out, flags=re.IGNORECASE)
-    # SQLite uses min() for scalar least-of-args
     out = re.sub(r"\bLEAST\s*\(", "min(", out, flags=re.IGNORECASE)
     return out
 
@@ -90,6 +92,12 @@ class _SqliteCursor:
         self._cur.execute(adapted, params or ())
         self.lastrowid = self._cur.lastrowid or 0
         self.rowcount = self._cur.rowcount
+        head = adapted.lstrip().split(None, 1)[0].upper() if adapted.strip() else ""
+        if head in {"INSERT", "UPDATE", "DELETE", "REPLACE"}:
+            try:
+                g.db_dirty = True
+            except RuntimeError:
+                pass
         return self
 
     def fetchone(self):
@@ -112,10 +120,11 @@ class _SqliteCursor:
 
 class _SqliteConnection:
     def __init__(self, path: str):
+        self.path = path
         self._raw = sqlite3.connect(path, check_same_thread=False)
         self._raw.row_factory = None
         self._autocommit = True
-        self._raw.isolation_level = None  # autocommit mode
+        self._raw.isolation_level = None
         self._raw.execute("PRAGMA foreign_keys = ON")
 
     def cursor(self):
@@ -123,11 +132,14 @@ class _SqliteConnection:
 
     def autocommit(self, enabled: bool):
         self._autocommit = bool(enabled)
-        # None = autocommit; "" = transactional
         self._raw.isolation_level = None if enabled else ""
 
     def commit(self):
         self._raw.commit()
+        try:
+            g.db_dirty = True
+        except RuntimeError:
+            pass
 
     def rollback(self):
         self._raw.rollback()
@@ -139,7 +151,34 @@ class _SqliteConnection:
 def _init_sqlite(conn: _SqliteConnection) -> None:
     cur = conn._raw.cursor()
     cur.executescript(_SQLITE_SCHEMA)
-    conn._raw.commit() if conn._raw.isolation_level is not None else None
+    if conn._raw.isolation_level is not None:
+        conn._raw.commit()
+
+
+def _hydrate_sqlite_if_needed(path) -> None:
+    """On Vercel, restore DB from Blob so signups survive redeploys/cold starts."""
+    global _sqlite_blob_hydrated
+    if _sqlite_blob_hydrated:
+        return
+    _sqlite_blob_hydrated = True
+    if not (cfg.ON_VERCEL and cfg.BLOB_ENABLED and cfg.USE_SQLITE):
+        return
+    from pathlib import Path
+
+    from .blob_store import restore_sqlite_from_blob
+
+    local = Path(path)
+    need = not local.is_file() or local.stat().st_size < 100
+    if not need:
+        try:
+            probe = sqlite3.connect(str(local))
+            row = probe.execute("SELECT COUNT(*) FROM admins").fetchone()
+            probe.close()
+            need = not row or int(row[0]) < 1
+        except Exception:
+            need = True
+    if need:
+        restore_sqlite_from_blob(local)
 
 
 def get_db():
@@ -147,9 +186,11 @@ def get_db():
     if "db" not in g:
         if cfg.USE_SQLITE:
             cfg.SQLITE_PATH.parent.mkdir(parents=True, exist_ok=True)
+            _hydrate_sqlite_if_needed(cfg.SQLITE_PATH)
             conn = _SqliteConnection(str(cfg.SQLITE_PATH))
             _init_sqlite(conn)
             g.db = conn
+            g.db_dirty = False
         else:
             import pymysql
             from pymysql.cursors import DictCursor
@@ -170,8 +211,23 @@ def get_db():
 
 def close_db(_e=None):
     conn = g.pop("db", None)
+    dirty = bool(g.pop("db_dirty", False))
     if conn is not None:
+        path = getattr(conn, "path", None)
         conn.close()
+        if (
+            dirty
+            and path
+            and cfg.ON_VERCEL
+            and cfg.BLOB_ENABLED
+            and cfg.USE_SQLITE
+        ):
+            try:
+                from .blob_store import persist_sqlite_to_blob
+
+                persist_sqlite_to_blob(path)
+            except Exception:
+                pass
 
 
 def ensure_schema(conn) -> None:

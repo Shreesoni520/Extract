@@ -63,6 +63,7 @@ def attach_visitor_cookie(response):
             path="/",
             httponly=True,
             samesite="Lax",
+            secure=bool(cfg.ON_VERCEL),
         )
     return response
 

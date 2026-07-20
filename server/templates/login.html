@@ -7,8 +7,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Sora:wght@500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/Extract/assets/css/dot-cursor.css?v=1" />
-  <link rel="stylesheet" href="/Extract/assets/css/app.css?v=20" />
+  <link rel="stylesheet" href="/Extract/assets/css/dot-cursor.css?v=2" />
+  <link rel="stylesheet" href="/Extract/assets/css/app.css?v=22" />
   {% include 'partials/theme-head.html' %}
 </head>
 <body class="login-body">
@@ -17,16 +17,19 @@
   <div class="login-wrap">
     <p class="brand-mark">{{ app_name }}</p>
     <h1>Welcome back</h1>
-    <p class="sub">Sign in to find people and open their files.</p>
+    <p class="sub">Sign in with the username and password you created.</p>
     {% if error %}
       <div class="alert">{{ error }}</div>
+    {% endif %}
+    {% if info %}
+      <div class="alert ok">{{ info }}</div>
     {% endif %}
     <form method="post" class="login-form" autocomplete="off">
       <label>
         <span>Username</span>
         <input type="text" name="username" required autofocus
                autocapitalize="off" autocorrect="off" spellcheck="false"
-               placeholder="yourname" />
+               placeholder="yourname" value="{{ username_value or '' }}" />
       </label>
       <label>
         <span>Password</span>
@@ -35,8 +38,8 @@
       <button type="submit">Sign in</button>
     </form>
     <p class="auth-switch">
-      New here?
-      <a href="/Extract/app/register.php">Sign up</a>
+      Don’t have an account yet?
+      <a href="/Extract/app/register.php">Create one</a>
     </p>
   </div>
   {% set skip_floating_theme = false %}

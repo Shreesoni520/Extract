@@ -32,6 +32,8 @@ Optional: with Apache running (and proxy enabled), **http://localhost/Extract/**
 2. Connect it to the **Extract** project (this adds `BLOB_READ_WRITE_TOKEN`).
 3. Redeploy. The upload page will show a higher max size and files skip the 4.5 MB function limit.
 
+With Blob connected, accounts and file records are also saved there so signups survive redeploys (not wiped from empty `/tmp` SQLite).
+
 ---
 
 ## What it does
