@@ -121,16 +121,47 @@
     uploadForm.addEventListener('submit', async (e) => {
       const file = fileInput?.files?.[0];
       const useBlob = uploadForm.dataset.blobUpload === '1';
+      const onVercel = uploadForm.dataset.onVercel === '1';
+      const progressWrap = document.getElementById('uploadProgress');
+      const progressBar = document.getElementById('uploadProgressBar');
+      const progressPct = document.getElementById('uploadProgressPct');
+      const progressLabel = document.getElementById('uploadProgressLabel');
 
-      if (!file) return;
+      function setProgress(pct, label) {
+        if (progressWrap) progressWrap.hidden = false;
+        if (progressBar) progressBar.style.width = `${Math.max(0, Math.min(100, pct))}%`;
+        if (progressPct) progressPct.textContent = `${Math.round(pct)}%`;
+        if (progressLabel && label) progressLabel.textContent = label;
+      }
+
+      function hideProgress() {
+        if (progressWrap) progressWrap.hidden = true;
+        if (progressBar) progressBar.style.width = '0%';
+      }
+
+      if (!file) {
+        e.preventDefault();
+        alert('Choose a file first.');
+        return;
+      }
       if (file.size > maxBytes) {
         e.preventDefault();
         showSizeLimitMessage(file);
         return;
       }
 
-      // Direct-to-Vercel-Blob — never send the file through the serverless function
-      if (!useBlob) return;
+      // Without Blob on Vercel, never post a big multipart body (ugly 413 page)
+      if (!useBlob && onVercel && file.size > maxBytes) {
+        e.preventDefault();
+        showSizeLimitMessage(file);
+        return;
+      }
+
+      if (!useBlob) {
+        // Classic local / small upload — still show a soft progress hint
+        setProgress(15, 'Sending file…');
+        return;
+      }
 
       e.preventDefault();
       const titleInput = uploadForm.querySelector('[name="title"]');
@@ -149,6 +180,7 @@
         submitBtn.disabled = true;
         submitBtn.textContent = 'Uploading…';
       }
+      setProgress(2, 'Preparing upload…');
 
       try {
         const pathname = `uploads/${Date.now()}-${Math.random().toString(16).slice(2)}/${file.name || 'file'}`;
@@ -163,30 +195,45 @@
         });
         const tokenData = await tokenRes.json();
         if (!tokenRes.ok || !tokenData.clientToken) {
-          throw new Error(tokenData.error || 'Could not start upload.');
+          throw new Error(tokenData.error || 'Could not start upload. Is Blob storage connected?');
         }
 
+        setProgress(8, 'Uploading to cloud…');
         const putUrl = `https://vercel.com/api/blob/?${new URLSearchParams({ pathname: tokenData.pathname || pathname })}`;
-        const putRes = await fetch(putUrl, {
-          method: 'PUT',
-          headers: {
-            authorization: `Bearer ${tokenData.clientToken}`,
-            'x-api-version': '12',
-            'x-vercel-blob-access': 'public',
-            ...(file.type ? { 'x-content-type': file.type } : {}),
-          },
-          body: file,
+        const blob = await new Promise((resolve, reject) => {
+          const xhr = new XMLHttpRequest();
+          xhr.open('PUT', putUrl);
+          xhr.setRequestHeader('authorization', `Bearer ${tokenData.clientToken}`);
+          xhr.setRequestHeader('x-api-version', '12');
+          xhr.setRequestHeader('x-vercel-blob-access', 'public');
+          if (file.type) xhr.setRequestHeader('x-content-type', file.type);
+          xhr.upload.onprogress = (ev) => {
+            if (!ev.lengthComputable) return;
+            const pct = 8 + (ev.loaded / ev.total) * 80;
+            setProgress(pct, 'Uploading to cloud…');
+          };
+          xhr.onload = () => {
+            if (xhr.status < 200 || xhr.status >= 300) {
+              let msg = 'Upload to storage failed.';
+              try {
+                const err = JSON.parse(xhr.responseText);
+                msg = err?.error?.message || msg;
+              } catch (_) {}
+              reject(new Error(msg));
+              return;
+            }
+            try {
+              resolve(JSON.parse(xhr.responseText));
+            } catch (_) {
+              reject(new Error('Bad response from storage.'));
+            }
+          };
+          xhr.onerror = () => reject(new Error('Network error during upload.'));
+          xhr.send(file);
         });
-        if (!putRes.ok) {
-          let msg = 'Upload to storage failed.';
-          try {
-            const err = await putRes.json();
-            msg = err?.error?.message || msg;
-          } catch (_) {}
-          throw new Error(msg);
-        }
-        const blob = await putRes.json();
+
         if (!blob?.url) throw new Error('Upload finished but no file URL was returned.');
+        setProgress(92, 'Saving details…');
 
         const regRes = await fetch('/Extract/api/register-upload.php', {
           method: 'POST',
@@ -206,8 +253,10 @@
         if (!regRes.ok || !regData.ok) {
           throw new Error(regData.error || 'Could not save the file.');
         }
+        setProgress(100, 'Done');
         window.location.href = '/Extract/app/?uploaded=1';
       } catch (err) {
+        hideProgress();
         alert(err?.message || 'Upload failed. Please try again.');
         if (submitBtn) {
           submitBtn.disabled = false;

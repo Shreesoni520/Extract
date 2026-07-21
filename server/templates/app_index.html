@@ -30,9 +30,18 @@
           <strong class="upload-max-value">{{ max_upload_label }}</strong>
         </div>
       </div>
-      <p class="hint">{% if blob_enabled %}Files upload directly to secure cloud storage (up to <strong>{{ max_upload_label }}</strong>).{% elif on_vercel %}This host only allows about <strong>{{ max_upload_label }}</strong> unless Blob storage is connected. Larger files work on the local app (up to 5 GB).{% else %}You can upload up to <strong>{{ max_upload_label }}</strong> per file.{% endif %} Choose if the file needs a password, or leave it open for anyone.</p>
+      <p class="hint">{% if blob_enabled %}Files go straight to cloud storage (up to <strong>{{ max_upload_label }}</strong>).{% elif on_vercel %}On this live host, keep files under <strong>{{ max_upload_label }}</strong> until cloud storage is connected. Locally you can upload up to 5 GB.{% else %}You can upload up to <strong>{{ max_upload_label }}</strong> per file.{% endif %} Turn on a password if you want people to ask before opening.</p>
       {% if on_vercel and not blob_enabled %}
-      <div class="alert" role="status">Cloud storage is not connected yet, so large uploads will fail on this host. In Vercel → Storage, create a <strong>Blob</strong> store for this project, then redeploy.</div>
+      <div class="setup-card" role="status">
+        <h3>Unlock bigger uploads</h3>
+        <p>Connect free Vercel Blob once — then uploads up to <strong>500 MB</strong> work, and your accounts stay after updates.</p>
+        <ol>
+          <li>Open your Vercel project</li>
+          <li>Go to <strong>Storage</strong> → create <strong>Blob</strong></li>
+          <li>Connect it to this project, then refresh this page</li>
+        </ol>
+        <a class="ghost small" href="https://vercel.com/dashboard" target="_blank" rel="noopener">Open Vercel dashboard</a>
+      </div>
       {% endif %}
       {% if message %}<div class="alert ok">{{ message }}</div>{% endif %}
       {% if error %}<div class="alert" id="serverUploadError">{{ error }}</div>{% endif %}
@@ -50,6 +59,16 @@
           <p id="sizeLimitText">This file can’t be uploaded. The maximum size on this site is <strong>{{ max_upload_label }}</strong>.</p>
         </div>
         <button type="button" class="ghost small" id="sizeLimitDismiss">Got it</button>
+      </div>
+
+      <div id="uploadProgress" class="upload-progress" hidden>
+        <div class="upload-progress-top">
+          <strong id="uploadProgressLabel">Uploading…</strong>
+          <span id="uploadProgressPct">0%</span>
+        </div>
+        <div class="upload-progress-track" aria-hidden="true">
+          <span id="uploadProgressBar"></span>
+        </div>
       </div>
 
       <form method="post" action="/Extract/app/" enctype="multipart/form-data" class="upload-form" id="uploadForm"
@@ -156,7 +175,7 @@
   <audio id="ping" preload="auto">
     <source src="/Extract/assets/sfx/notify.wav" type="audio/wav" />
   </audio>
-  <script src="/Extract/assets/js/app.js?v=21"></script>
+  <script src="/Extract/assets/js/app.js?v=22"></script>
   {% set skip_floating_theme = true %}
   {% include 'partials/theme-foot.html' %}
 </body>
