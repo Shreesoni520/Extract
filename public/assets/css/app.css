@@ -37,7 +37,7 @@ html.auth-pending body::before {
   animation: se-fade-in 220ms ease both;
 }
 html.auth-ok body {
-  animation: se-fade-up 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: se-fade-in 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 .nav-user {

@@ -20,8 +20,10 @@
 <script>
 (function () {
   try {
-    if (localStorage.getItem('se_theme') === 'dark') {
+    var t = localStorage.getItem('se_theme');
+    if (t !== 'light') {
       document.documentElement.setAttribute('data-theme', 'dark');
+      if (t !== 'dark') localStorage.setItem('se_theme', 'dark');
     }
   } catch (_) {}
 })();

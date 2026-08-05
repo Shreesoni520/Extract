@@ -756,14 +756,18 @@ a.nav-btn-dark:hover {
 .modal[hidden] { display: none !important; }
 .modal {
   position: fixed;
-  inset: 0;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
   z-index: 40;
   display: grid;
-  align-items: end;
-  justify-items: center;
-  padding: 0;
+  place-items: center;
+  padding: 1.25rem;
   background: rgba(0, 0, 0, 0.5);
   animation: se-fade-in 180ms ease both;
+  overflow: hidden;
 }
 
 @keyframes modal-fade {
@@ -776,12 +780,13 @@ a.nav-btn-dark:hover {
   width: min(440px, 100%);
   margin: 0 auto;
   padding: 1.7rem 1.55rem 1.55rem;
-  border-radius: 24px 24px 0 0;
+  border-radius: 22px;
   background: var(--surface);
   border: 1px solid var(--line);
-  border-bottom: 0;
-  box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.18);
+  box-shadow: 0 28px 70px rgba(0, 0, 0, 0.38);
   animation: se-sheet-up 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  max-height: min(92dvh, 100%);
+  overflow-y: auto;
 }
 
 .sheet.is-enter {
@@ -789,15 +794,6 @@ a.nav-btn-dark:hover {
 }
 
 @media (min-width: 720px) {
-  .modal {
-    align-items: center;
-    padding: 1.5rem;
-  }
-  .sheet {
-    border-radius: 22px;
-    border-bottom: 1px solid var(--line);
-    box-shadow: 0 28px 70px rgba(0, 0, 0, 0.38);
-  }
   .sheet::before {
     display: none;
   }
@@ -816,7 +812,7 @@ a.nav-btn-dark:hover {
 
 .sheet::before {
   content: "";
-  display: block;
+  display: none;
   width: 44px;
   height: 4px;
   margin: 0 auto 1.2rem;
@@ -1177,15 +1173,15 @@ a.nav-btn-dark:hover {
   }
 
   .modal {
-    align-items: flex-end;
-    padding: 0;
+    place-items: center;
+    padding: 1rem;
   }
 
   .sheet {
-    width: 100%;
+    width: min(440px, 100%);
     max-height: 92dvh;
     overflow-y: auto;
-    border-radius: 16px 16px 0 0;
+    border-radius: 20px;
     padding-bottom: max(1.5rem, env(safe-area-inset-bottom, 0px));
   }
 

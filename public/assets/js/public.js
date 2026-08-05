@@ -645,6 +645,7 @@
 
   function openModal(item) {
     current = item;
+    if (modal && modal.parentElement !== document.body) document.body.appendChild(modal);
     modal.hidden = false;
     const sheet = modal.querySelector('.sheet');
     if (sheet) {

@@ -6,15 +6,23 @@
 
 .se-chat-modal {
   position: fixed !important;
-  inset: 0 !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: auto !important;
+  bottom: auto !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  height: 100dvh !important;
   z-index: 9999 !important;
-  display: block !important;
-  padding: 0;
-  margin: 0;
+  display: grid !important;
+  place-items: center !important;
+  padding: 1rem !important;
+  margin: 0 !important;
   background: rgba(10, 10, 12, 0.55);
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
   animation: se-chat-fade 160ms ease both;
+  overflow: hidden;
 }
 
 @keyframes se-chat-fade {
@@ -23,10 +31,10 @@
 }
 
 .se-chat-sheet {
-  position: absolute !important;
-  top: 50% !important;
-  left: 50% !important;
-  transform: translate(-50%, -50%) !important;
+  position: relative !important;
+  top: auto !important;
+  left: auto !important;
+  transform: none !important;
   width: min(420px, calc(100vw - 2rem));
   max-height: min(88vh, 620px);
   display: flex;
@@ -46,11 +54,11 @@
 @keyframes se-chat-up {
   from {
     opacity: 0;
-    transform: translate(-50%, calc(-50% + 14px)) scale(0.985);
+    transform: translateY(14px) scale(0.985);
   }
   to {
     opacity: 1;
-    transform: translate(-50%, -50%);
+    transform: none;
   }
 }
 
@@ -450,6 +458,10 @@ body.se-chat-open {
 
 @media (max-width: 719px) {
   .se-chat-sheet {
+    position: relative !important;
+    top: auto !important;
+    left: auto !important;
+    transform: none !important;
     width: min(420px, calc(100vw - 1.25rem));
     max-height: min(88dvh, 620px);
     border-radius: 18px;

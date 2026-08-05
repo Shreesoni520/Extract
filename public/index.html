@@ -19,13 +19,15 @@
   <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@500;600;700&family=Sora:wght@700&display=swap" rel="stylesheet" media="print" onload="this.media='all'" />
   <noscript><link href="https://fonts.googleapis.com/css2?family=Figtree:wght@500;600;700&family=Sora:wght@700&display=swap" rel="stylesheet" /></noscript>
   <link rel="stylesheet" href="/assets/css/motion.css?v=1" />
-  <link rel="stylesheet" href="/assets/css/public.css?v=47" />
-  <link rel="stylesheet" href="/assets/css/se-chat.css?v=5" />
+  <link rel="stylesheet" href="/assets/css/public.css?v=49" />
+  <link rel="stylesheet" href="/assets/css/se-chat.css?v=7" />
 <script>
 (function () {
   try {
-    if (localStorage.getItem('se_theme') === 'dark') {
+    var t = localStorage.getItem('se_theme');
+    if (t !== 'light') {
       document.documentElement.setAttribute('data-theme', 'dark');
+      if (t !== 'dark') localStorage.setItem('se_theme', 'dark');
     }
   } catch (_) {}
 })();
