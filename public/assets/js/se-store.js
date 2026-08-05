@@ -199,7 +199,7 @@
   async function logout() {
     cachedUser = null;
     writeUserHint(null);
-    ready = Promise.resolve(null);
+    ready = null;
     try {
       await api('/api/auth/logout', {
         method: 'POST',
@@ -214,9 +214,12 @@
           credentials: 'include',
           headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
           body: '{}',
+          cache: 'no-store',
         });
       } catch (_) {}
     }
+    cachedUser = null;
+    writeUserHint(null);
     try {
       global.dispatchEvent(new CustomEvent('se-auth-updated', { detail: null }));
     } catch (_) {}

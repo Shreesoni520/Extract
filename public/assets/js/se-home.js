@@ -34,7 +34,7 @@
 <p class="hero-auth">
   <a href="${root()}/app/account.html">Account</a>
   &middot;
-  <a href="#" id="logoutLink" data-se-logout="1">Logout</a>
+  <button type="button" class="linkish" id="logoutLink" data-se-logout="1">Logout</button>
 </p>`;
   }
 
@@ -49,7 +49,7 @@
         <a class="nav-btn" href="${r}/app/index.html">Upload files</a>
         <a class="nav-btn" href="${r}/app/account.html">Account</a>
         <button type="button" class="nav-btn" data-se-theme="1" aria-label="Toggle dark mode" aria-pressed="false">Dark</button>
-        <a class="nav-btn nav-btn-dark" href="#" id="navLogout" data-se-logout="1">Logout</a>
+        <button type="button" class="nav-btn nav-btn-dark" id="navLogout" data-se-logout="1">Logout</button>
       </div>
     </nav>
     <div class="files">
@@ -147,8 +147,18 @@
   }
 
   async function initHome() {
+    const params = new URLSearchParams(window.location.search);
+    const forcedLogout = params.get('logged_out') === '1';
+    if (forcedLogout) {
+      try { sessionStorage.removeItem('se_user_hint'); } catch (_) {}
+      if (window.SEStore && typeof window.SEStore.logout === 'function') {
+        // Best-effort server clear if the click path was interrupted.
+        try { await Promise.race([window.SEStore.logout(), new Promise((r) => setTimeout(r, 1500))]); } catch (_) {}
+      }
+    }
+
     // Instant first paint from session hint (no waiting on /me).
-    const hint = window.SEStore && window.SEStore.readUserHint
+    const hint = (!forcedLogout && window.SEStore && window.SEStore.readUserHint)
       ? window.SEStore.readUserHint()
       : null;
     if (hint && hint.username) paintHero(true, hint.username);
@@ -156,12 +166,16 @@
     bindHomeActions();
 
     if (window.SEStore) {
-      await window.SEStore.init();
+      await window.SEStore.init({ force: forcedLogout });
     }
 
-    const params = new URLSearchParams(window.location.search);
+    // Drop the query flag so refresh doesn't keep forcing logout.
+    if (forcedLogout && window.history && window.history.replaceState) {
+      try { window.history.replaceState({}, '', `${root()}/`); } catch (_) {}
+    }
+
     const openBrowse = params.get('browse') === '1';
-    const loggedIn = !!(window.SEStore && window.SEStore.adminLoggedIn());
+    const loggedIn = !forcedLogout && !!(window.SEStore && window.SEStore.adminLoggedIn());
     window.SE_LOGGED_IN = loggedIn;
     window.SE_OPEN_BROWSE = loggedIn && openBrowse;
 

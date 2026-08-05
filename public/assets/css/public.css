@@ -162,13 +162,21 @@ body.view-files > .theme-toggle {
   font-size: 0.95rem;
 }
 
-.hero-auth a {
+.hero-auth a,
+.hero-auth button.linkish {
   color: var(--ink);
   font-weight: 600;
   text-decoration: none;
+  background: none;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  cursor: pointer;
 }
 
-.hero-auth a:hover {
+.hero-auth a:hover,
+.hero-auth button.linkish:hover {
   text-decoration: underline;
 }
 

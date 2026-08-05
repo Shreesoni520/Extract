@@ -96,14 +96,39 @@ function clearCookieOpts() {
   };
 }
 
+function expiredSetCookie(name, { httpOnly = true } = {}) {
+  const parts = [
+    `${name}=`,
+    'Path=/',
+    'Expires=Thu, 01 Jan 1970 00:00:00 GMT',
+    'Max-Age=0',
+    'SameSite=Lax',
+  ];
+  if (httpOnly) parts.push('HttpOnly');
+  if (isProd()) parts.push('Secure');
+  return parts.join('; ');
+}
+
 function clearAuthCookies(res) {
-  if (!res || typeof res.clearCookie !== 'function') return;
+  if (!res) return;
   const opts = clearCookieOpts();
   // Must match Set-Cookie flags or browsers keep the Secure session cookies.
-  res.clearCookie(AUTH_COOKIE, opts);
-  res.clearCookie('se_session', opts);
-  res.clearCookie('se_session.sig', opts);
-  res.clearCookie('connect.sid', opts);
+  if (typeof res.clearCookie === 'function') {
+    res.clearCookie(AUTH_COOKIE, opts);
+    res.clearCookie('se_session', opts);
+    res.clearCookie('se_session.sig', opts);
+    res.clearCookie('connect.sid', opts);
+  }
+  // Extra hard clear for serverless / cookie-session signed pairs.
+  const doomed = [
+    expiredSetCookie(AUTH_COOKIE),
+    expiredSetCookie('se_session'),
+    expiredSetCookie('se_session.sig'),
+    expiredSetCookie('connect.sid'),
+  ];
+  doomed.forEach((line) => {
+    if (typeof res.append === 'function') res.append('Set-Cookie', line);
+  });
 }
 
 function clearSessionUser(req, res) {

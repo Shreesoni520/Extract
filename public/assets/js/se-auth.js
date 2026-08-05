@@ -58,32 +58,62 @@
     document.documentElement.classList.remove('auth-pending');
   }
 
-  function bindLogoutLinks() {
-    document.querySelectorAll('[data-se-logout], a[href*="#logout"], #logoutLink, #navLogout').forEach((a) => {
-      if (a.dataset.seLogoutBound === '1') return;
-      a.dataset.seLogoutBound = '1';
-      a.addEventListener('click', async (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        try {
-          if (window.SEStore && typeof window.SEStore.logout === 'function') {
-            await window.SEStore.logout();
-          } else {
-            await fetch('/api/auth/logout', {
-              method: 'POST',
-              credentials: 'include',
-              headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-              body: '{}',
-            });
-          }
-        } catch (_) {}
-        try {
-          sessionStorage.removeItem('se_user_hint');
-        } catch (_) {}
-        // Hard navigation so stale UI / optimistic session hint cannot linger.
-        window.location.href = `${homeUrl()}?logged_out=1`;
+  function clearLocalSession() {
+    try { sessionStorage.removeItem('se_user_hint'); } catch (_) {}
+    try { localStorage.removeItem('se_user_hint'); } catch (_) {}
+  }
+
+  async function performLogout() {
+    clearLocalSession();
+    const logoutCall = (async () => {
+      if (window.SEStore && typeof window.SEStore.logout === 'function') {
+        await window.SEStore.logout();
+        return;
+      }
+      await fetch('/api/auth/logout', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: '{}',
+        cache: 'no-store',
       });
-    });
+    })();
+    // Never let a hung network call make Logout feel dead.
+    await Promise.race([
+      logoutCall.catch(() => {}),
+      new Promise((resolve) => setTimeout(resolve, 2500)),
+    ]);
+    clearLocalSession();
+  }
+
+  function goLoggedOut() {
+    clearLocalSession();
+    window.location.replace(`${homeUrl()}?logged_out=1`);
+  }
+
+  function bindLogoutLinks() {
+    // Event delegation: browse nav is injected after first paint.
+    if (document.documentElement.dataset.seLogoutDelegation === '1') return;
+    document.documentElement.dataset.seLogoutDelegation = '1';
+    document.addEventListener('click', async (e) => {
+      const a = e.target && e.target.closest
+        ? e.target.closest('[data-se-logout], a[href*="#logout"], #logoutLink, #navLogout')
+        : null;
+      if (!a) return;
+      e.preventDefault();
+      e.stopPropagation();
+      if (a.dataset.seLoggingOut === '1') return;
+      a.dataset.seLoggingOut = '1';
+      try {
+        a.setAttribute('aria-busy', 'true');
+        if ('disabled' in a) a.disabled = true;
+        await performLogout();
+      } catch (_) {
+        // still leave
+      } finally {
+        goLoggedOut();
+      }
+    }, true);
   }
 
   async function initAuth() {
