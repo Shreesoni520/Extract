@@ -1,8 +1,8 @@
-# Shree's Extractions
+﻿# Shree's Extractions
 
 **Private, person-to-person file sharing with timed access and ephemeral chat.**
 
-Shree's Extractions lets trusted people share files without making them publicly open. Owners upload files, visitors request access, and unlock happens through a short one-time code with a strict time window. An optional private chat exists only for that request � then messages are wiped.
+Shree's Extractions lets trusted people share files without making them publicly open. Owners upload files, visitors request access, and unlock happens through a short one-time code with a strict time window. An optional private chat exists only for that request, then messages are wiped.
 
 **Live demo:** [https://shrees-extractions.vercel.app](https://shrees-extractions.vercel.app)
 
@@ -18,7 +18,7 @@ Most file hosts are either fully public or fully locked behind a permanent passw
 2. Another member finds them, opens the file, and requests a password.
 3. The owner is notified in real time, can chat, and can share the one-time code.
 4. Access lasts about **5 minutes**. The owner can lock everyone out immediately.
-5. When the window ends � or the file is locked/deleted � chat and request state are cleared.
+5. When the window ends, or the file is locked/deleted, chat and request state are cleared.
 
 The product focus is **control, clarity, and ephemerality**: share when needed, leave nothing lingering.
 
@@ -34,18 +34,18 @@ The product focus is **control, clarity, and ephemerality**: share when needed, 
 | **Timed access** | One-time unlock codes with a ~5 minute request + unlock window |
 | **Owner controls** | Approve flow via code, lock again, hide/show, copy link, delete |
 | **Live requests** | Toast + sound on the upload page when someone asks for access |
-| **Ephemeral chat** | Owner ? requester chat during the request window only (150 chars/message) |
-| **Large files** | Chunked uploads � up to **1 GB** on Redis storage; up to **5 GB** with S3/R2 |
+| **Ephemeral chat** | Owner and requester chat during the request window only (150 chars/message) |
+| **Large files** | Chunked uploads — up to **1 GB** on Redis storage; up to **5 GB** with S3/R2 |
 | **Responsive UI** | Clean landing, browse, upload dashboard, and modal flows for mobile + desktop |
 
 ### Access flow
 
 ```text
-Request password  ?  Owner notified  ?  Optional chat / share code
-        ?
-Visitor unlocks  ?  View / download for ~5 minutes
-        ?
-Timer ends, lock, or delete  ?  Access revoked, chat wiped
+Request password  ->  Owner notified  ->  Optional chat / share code
+        |
+Visitor unlocks  ->  View / download for ~5 minutes
+        |
+Timer ends, lock, or delete  ->  Access revoked, chat wiped
 ```
 
 ### Ephemeral chat rules
@@ -53,7 +53,7 @@ Timer ends, lock, or delete  ?  Access revoked, chat wiped
 - Chat appears only **after** a password request exists.
 - Messages are capped at **150 characters**.
 - Chat lives only for the same **~5 minute** window as the request/unlock.
-- Expiry, lock-again, or file delete clears chat data � nothing is kept for later.
+- Expiry, lock-again, or file delete clears chat data — nothing is kept for later.
 
 ---
 
@@ -82,24 +82,24 @@ Timer ends, lock, or delete  ?  Access revoked, chat wiped
 
 ```text
 Extract/
-+-- index.js                 # Vercel entry � exports the Express app
-+-- package.json             # Root dependencies + npm scripts
-+-- vercel.json              # Function config (extended duration for uploads)
-+-- start-server.bat         # Local Windows helper
-+-- public/                  # Public static site
-�   +-- index.html           # Landing + browse experience
-�   +-- download.html        # View / download helper
-�   +-- app/                 # Login + register pages
-�   +-- assets/              # CSS, JS, images, notification sound
-+-- server/
-�   +-- pages/               # Auth-gated upload / account / users pages
-�   +-- schema.sql           # MySQL schema for local installs
-�   +-- .env.example         # Environment template
-�   +-- src/                 # API, auth, storage, Redis/S3 adapters
-+-- scripts/
-�   +-- clear-db.js          # Wipe production Redis data (maintenance)
-+-- uploads/                 # Local disk storage (dev only)
-+-- README.md
+├── index.js                 # Vercel entry — exports the Express app
+├── package.json             # Root dependencies + npm scripts
+├── vercel.json              # Function config (extended duration for uploads)
+├── start-server.bat         # Local Windows helper
+├── public/                  # Public static site
+│   ├── index.html           # Landing + browse experience
+│   ├── download.html        # View / download helper
+│   ├── app/                 # Login + register pages
+│   └── assets/              # CSS, JS, images, notification sound
+├── server/
+│   ├── pages/               # Auth-gated upload / account / users pages
+│   ├── schema.sql           # MySQL schema for local installs
+│   ├── .env.example         # Environment template
+│   └── src/                 # API, auth, storage, Redis/S3 adapters
+├── scripts/
+│   └── clear-db.js          # Wipe production Redis data (maintenance)
+├── uploads/                 # Local disk storage (dev only)
+└── README.md
 ```
 
 ---
@@ -178,7 +178,7 @@ Set these in the Vercel project:
 | `SESSION_SECRET` | Cookie session signing (required) |
 | `KV_REST_API_URL` | Upstash / Vercel KV REST URL |
 | `KV_REST_API_TOKEN` | Upstash / Vercel KV token |
-| `S3_*` (optional) | Cloudflare R2 / S3 for 1�5 GB media |
+| `S3_*` (optional) | Cloudflare R2 / S3 for 1–5 GB media |
 | `BLOB_READ_WRITE_TOKEN` (optional) | Legacy Vercel Blob path |
 
 ### Deploy
@@ -217,7 +217,7 @@ Already in place:
 
 - Passwords hashed with **bcrypt**
 - HttpOnly cookie sessions
-- Auth-gated upload/account pages (not just �hidden� static HTML)
+- Auth-gated upload/account pages (not just client-hidden static HTML)
 - Short-lived unlock codes and unlock windows
 - Chat and request cleanup on expire / lock / delete
 - File bytes served through controlled API paths, not a public open directory listing
@@ -240,7 +240,7 @@ Requires `KV_REST_API_URL` and `KV_REST_API_TOKEN` in `.env.local` or `server/.e
 
 ## Author
 
-**Krishna** � creator of Shree's Extractions.
+**Krishna** — creator of Shree's Extractions.
 
 A full-stack project focused on practical product constraints: serverless uploads, timed permissioning, and ephemeral communication between real people.
 
