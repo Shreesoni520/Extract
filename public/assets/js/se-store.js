@@ -197,12 +197,29 @@
   }
 
   async function logout() {
-    try {
-      await api('/api/auth/logout', { method: 'POST', body: {} });
-    } catch (_) {}
     cachedUser = null;
     writeUserHint(null);
     ready = Promise.resolve(null);
+    try {
+      await api('/api/auth/logout', {
+        method: 'POST',
+        body: {},
+        headers: { 'Cache-Control': 'no-store' },
+      });
+    } catch (_) {
+      // Still clear local session even if the network call fails.
+      try {
+        await fetch(apiUrl('/api/auth/logout'), {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+          body: '{}',
+        });
+      } catch (_) {}
+    }
+    try {
+      global.dispatchEvent(new CustomEvent('se-auth-updated', { detail: null }));
+    } catch (_) {}
   }
 
   async function searchUsers(q) {

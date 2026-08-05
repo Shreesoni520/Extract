@@ -87,20 +87,36 @@ function setSessionUser(req, res, user) {
   }
 }
 
+function clearCookieOpts() {
+  return {
+    path: '/',
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: isProd(),
+  };
+}
+
+function clearAuthCookies(res) {
+  if (!res || typeof res.clearCookie !== 'function') return;
+  const opts = clearCookieOpts();
+  // Must match Set-Cookie flags or browsers keep the Secure session cookies.
+  res.clearCookie(AUTH_COOKIE, opts);
+  res.clearCookie('se_session', opts);
+  res.clearCookie('se_session.sig', opts);
+  res.clearCookie('connect.sid', opts);
+}
+
 function clearSessionUser(req, res) {
   if (req.session) {
     delete req.session.adminId;
     delete req.session.adminUsername;
     delete req.session.adminAvatar;
   }
-  if (res && typeof res.clearCookie === 'function') {
-    res.clearCookie(AUTH_COOKIE, {
-      path: '/',
-      httpOnly: true,
-      sameSite: 'lax',
-      secure: isProd(),
-    });
-  }
+  // cookie-session: null session expires the signed pair on the response.
+  try {
+    req.session = null;
+  } catch (_) {}
+  clearAuthCookies(res);
 }
 
 function ensureVisitor(req, res, next) {
@@ -126,5 +142,6 @@ module.exports = {
   getSessionUser,
   setSessionUser,
   clearSessionUser,
+  clearAuthCookies,
   ensureVisitor,
 };

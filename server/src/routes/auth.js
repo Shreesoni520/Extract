@@ -13,6 +13,7 @@ const {
   getSessionUser,
   setSessionUser,
   clearSessionUser,
+  clearAuthCookies,
 } = require('../middleware/auth');
 
 const router = express.Router();
@@ -110,10 +111,10 @@ router.post('/login', async (req, res) => {
 
 router.post('/logout', (req, res) => {
   clearSessionUser(req, res);
-  req.session = null;
-  res.clearCookie('se_session', { path: '/' });
-  res.clearCookie('se_auth', { path: '/' });
-  res.clearCookie('connect.sid', { path: '/' });
+  // Belt-and-suspenders in case session middleware already ran.
+  try { req.session = null; } catch (_) {}
+  clearAuthCookies(res);
+  res.set('Cache-Control', 'no-store');
   return res.json({ ok: true });
 });
 

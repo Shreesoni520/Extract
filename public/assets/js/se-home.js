@@ -48,7 +48,7 @@
       <div class="app-nav-end">
         <a class="nav-btn" href="${r}/app/index.html">Upload files</a>
         <a class="nav-btn" href="${r}/app/account.html">Account</a>
-        <button type="button" class="nav-btn" id="themeToggle" aria-label="Toggle dark mode" aria-pressed="false">Dark</button>
+        <button type="button" class="nav-btn" data-se-theme="1" aria-label="Toggle dark mode" aria-pressed="false">Dark</button>
         <a class="nav-btn nav-btn-dark" href="#" id="navLogout" data-se-logout="1">Logout</a>
       </div>
     </nav>
@@ -143,16 +143,7 @@
       });
     }
 
-    ['logoutLink', 'navLogout'].forEach((id) => {
-      const el = document.getElementById(id);
-      if (!el || el.dataset.bound === '1') return;
-      el.dataset.bound = '1';
-      el.addEventListener('click', async (e) => {
-        e.preventDefault();
-        await window.SEStore.logout();
-        window.location.href = root() ? `${root()}/` : '/';
-      });
-    });
+    // Logout is bound by se-auth.js via [data-se-logout] (and re-bound on se-home-ready).
   }
 
   async function initHome() {
