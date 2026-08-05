@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en" class="auth-pending">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" />
+<meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate" />
+<meta http-equiv="Pragma" content="no-cache" />
+  <title>Users — Shree's Extractions</title>
+<link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml" />
+<link rel="icon" href="/assets/img/favicon-32.png" type="image/png" sizes="32x32" />
+<link rel="icon" href="/assets/img/favicon-48.png" type="image/png" sizes="48x48" />
+<link rel="shortcut icon" href="/favicon.ico" />
+<link rel="apple-touch-icon" href="/assets/img/apple-touch-icon.png" sizes="180x180" />
+<meta name="theme-color" content="#111111" />
+<meta property="og:image" content="/assets/img/og-image.png" />
+<meta name="twitter:card" content="summary" />
+<meta name="twitter:image" content="/assets/img/og-image.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Sora:wght@500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/assets/css/motion.css?v=1" />
+  <link rel="stylesheet" href="/assets/css/app.css?v=20" />
+  <link rel="stylesheet" href="/assets/css/users.css?v=1" />
+<script>
+(function () {
+  try {
+    if (localStorage.getItem('se_theme') === 'dark') {
+      document.documentElement.setAttribute('data-theme', 'dark');
+    }
+  } catch (_) {}
+})();
+</script>
+</head>
+<body class="admin-body">
+<nav class="app-nav" aria-label="Main">
+  <a class="nav-btn" href="/">&larr; Back</a>
+  <div class="app-nav-end">
+    <span class="nav-user" data-se-username></span>
+    <a class="nav-btn" href="/?browse=1">Find people</a>
+    <a class="nav-btn" href="/app/index.html">Upload files</a>
+    <a class="nav-btn" href="/app/account.html">Account</a>
+    <button type="button" class="nav-btn" id="themeToggle" aria-label="Toggle dark mode" aria-pressed="false">Dark</button>
+    <a class="nav-btn nav-btn-dark" href="#" data-se-logout="1">Logout</a>
+  </div>
+</nav>
+  <header class="admin-top">
+    <div>
+      <h1>Users</h1>
+    </div>
+  </header>
+
+  <main class="users-layout">
+    <section class="panel">
+      <h2>Add user</h2>
+      <p class="hint">New users can log in, upload files, and appear in public search by username.</p>
+      <div id="flashOk"></div>
+      <div id="flashErr"></div>
+      <form method="post" class="upload-form" autocomplete="off">
+        <input type="hidden" name="action" value="add_user" />
+        <label>
+          <span>Username</span>
+          <input type="text" name="username" required minlength="3" maxlength="32"
+                 pattern="[a-z0-9._-]+" placeholder="person name"
+                 autocapitalize="off" autocorrect="off" spellcheck="false" />
+        </label>
+        <label>
+          <span>Password</span>
+          <input type="password" name="password" required minlength="8" />
+        </label>
+        <label>
+          <span>Confirm password</span>
+          <input type="password" name="confirm" required minlength="8" />
+        </label>
+        <button type="submit">Create user</button>
+      </form>
+    </section>
+
+    <section class="panel">
+      <h2>All users</h2>
+      <div class="item-table" style="margin-top: 1rem;" id="usersMount"></div>
+    </section>
+  </main>
+  <script src="/assets/js/se-store.js?v=5"></script>
+  <script src="/assets/js/se-api.js?v=1"></script>
+  <script src="/assets/js/se-auth.js?v=5"></script>
+  <script src="/assets/js/se-users-page.js?v=4"></script>
+<script src="/assets/js/theme.js?v=2" defer></script>
+</body>
+</html>

@@ -1,0 +1,29 @@
+{
+  "name": "shrees-extractions",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Shree's Extractions — Express app for local XAMPP and Vercel",
+  "main": "index.js",
+  "scripts": {
+    "start": "node server/src/index.js",
+    "dev": "node --watch server/src/index.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.1103.0",
+    "@aws-sdk/s3-request-presigner": "^3.1103.0",
+    "@vercel/blob": "^0.27.3",
+    "bcryptjs": "^3.0.2",
+    "cookie-parser": "^1.4.7",
+    "cookie-session": "^2.1.1",
+    "cors": "^2.8.5",
+    "dotenv": "^16.5.0",
+    "express": "^4.21.2",
+    "express-session": "^1.18.1",
+    "multer": "^1.4.5-lts.2",
+    "mysql2": "^3.14.1",
+    "uuid": "^11.1.0"
+  }
+}

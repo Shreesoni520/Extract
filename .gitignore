@@ -1,0 +1,35 @@
+# Dependencies
+node_modules/
+server/node_modules/
+
+# Secrets / local env (never commit)
+.env
+.env.local
+.env.*.local
+server/.env
+!.env.example
+!server/.env.example
+
+# Uploaded user files (local only)
+uploads/**
+!uploads/.gitkeep
+!uploads/avatars/
+!uploads/avatars/.gitkeep
+
+# OS / editor
+.DS_Store
+Thumbs.db
+Desktop.ini
+.vscode/
+.idea/
+*.swp
+*~
+
+# Logs / temp
+*.log
+tmp/
+temp/
+*.sql.gz
+
+# Vercel local link metadata
+.vercel/

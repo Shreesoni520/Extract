@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en" class="auth-pending">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" />
+<meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate" />
+<meta http-equiv="Pragma" content="no-cache" />
+  <title>Account — Shree's Extractions</title>
+<link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml" />
+<link rel="icon" href="/assets/img/favicon-32.png" type="image/png" sizes="32x32" />
+<link rel="icon" href="/assets/img/favicon-48.png" type="image/png" sizes="48x48" />
+<link rel="shortcut icon" href="/favicon.ico" />
+<link rel="apple-touch-icon" href="/assets/img/apple-touch-icon.png" sizes="180x180" />
+<meta name="theme-color" content="#111111" />
+<meta property="og:image" content="/assets/img/og-image.png" />
+<meta name="twitter:card" content="summary" />
+<meta name="twitter:image" content="/assets/img/og-image.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Sora:wght@500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/assets/css/motion.css?v=1" />
+  <link rel="stylesheet" href="/assets/css/app.css?v=20" />
+  <link rel="stylesheet" href="/assets/css/account.css?v=1" />
+<script>
+(function () {
+  try {
+    if (localStorage.getItem('se_theme') === 'dark') {
+      document.documentElement.setAttribute('data-theme', 'dark');
+    }
+  } catch (_) {}
+})();
+</script>
+</head>
+<body class="account-page">
+  <div class="account-top">
+<nav class="app-nav" aria-label="Main">
+  <a class="nav-btn" href="/">&larr; Back</a>
+  <div class="app-nav-end">
+    <span class="nav-user" data-se-username></span>
+    <a class="nav-btn" href="/?browse=1">Find people</a>
+    <a class="nav-btn" href="/app/index.html">Upload files</a>
+    <button type="button" class="nav-btn" id="themeToggle" aria-label="Toggle dark mode" aria-pressed="false">Dark</button>
+    <a class="nav-btn nav-btn-dark" href="#" data-se-logout="1">Logout</a>
+  </div>
+</nav>
+  </div>
+
+  <div class="account-center">
+    <div class="account-wrap">
+      <div id="flashOk"></div>
+      <div id="flashErr"></div>
+
+      <div class="account-stack">
+        <section class="account-box">
+          <h2>Profile image</h2>
+          <p class="sub">Shown when people search for your username.</p>
+          <div class="avatar-preview">
+            <img id="avatarPreview" src="/assets/img/favicon-32.png" alt="Profile" />
+            <p class="hint">JPG, PNG, WEBP or GIF — max 3 MB</p>
+          </div>
+          <form method="post" enctype="multipart/form-data" class="login-form" id="avatarForm">
+            <input type="hidden" name="action" value="avatar" />
+            <label class="avatar-pick" id="avatarPick" for="avatarInput">
+              <input id="avatarInput" type="file" name="avatar" accept="image/*" required />
+              <span class="avatar-pick-title">Choose image</span>
+              <span class="avatar-pick-sub" id="avatarFileName">Click or drop a photo here</span>
+            </label>
+            <button type="submit">Save image</button>
+          </form>
+        </section>
+
+        <section class="account-box">
+          <h1>Account</h1>
+          <p class="sub">Change your username anytime. Only fill the password fields if you want a new password.</p>
+          <form method="post" class="login-form" autocomplete="off" id="accountForm">
+            <input type="hidden" name="action" value="account" />
+            <label>
+              <span>Username</span>
+              <input type="text" name="new_username" id="usernameInput" required minlength="3" maxlength="32"
+                     pattern="[a-z0-9._-]+" value=""
+                     autocapitalize="off" autocorrect="off" spellcheck="false" />
+            </label>
+            <label>
+              <span>New password <em>(optional)</em></span>
+              <input type="password" name="new_password" id="newPassword" minlength="8"
+                     autocomplete="new-password" placeholder="Leave blank to keep your current password" />
+            </label>
+            <label>
+              <span>Confirm new password</span>
+              <input type="password" name="confirm_password" id="confirmPassword" minlength="8"
+                     autocomplete="new-password" placeholder="Repeat the new password" />
+            </label>
+            <label id="currentPassWrap" hidden>
+              <span>Current password</span>
+              <input type="password" name="current_password" id="currentPassword"
+                     autocomplete="current-password"
+                     placeholder="The password you use on Sign in" />
+            </label>
+            <p class="hint" id="passHint" hidden>To set a new password, type your current sign-in password in the box above.</p>
+            <button type="submit">Save changes</button>
+          </form>
+        </section>
+      </div>
+    </div>
+  </div>
+  <script src="/assets/js/se-store.js?v=8"></script>
+  <script src="/assets/js/se-api.js?v=1"></script>
+  <script src="/assets/js/se-auth.js?v=5"></script>
+  <script src="/assets/js/account.js?v=2"></script>
+  <script src="/assets/js/se-account-page.js?v=5"></script>
+<script src="/assets/js/theme.js?v=2" defer></script>
+</body>
+</html>

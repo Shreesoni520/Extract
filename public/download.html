@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Download — Shree's Extractions</title>
+<link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml" />
+<link rel="icon" href="/assets/img/favicon-32.png" type="image/png" sizes="32x32" />
+<link rel="icon" href="/assets/img/favicon-48.png" type="image/png" sizes="48x48" />
+<link rel="shortcut icon" href="/favicon.ico" />
+<link rel="apple-touch-icon" href="/assets/img/apple-touch-icon.png" sizes="180x180" />
+<meta name="theme-color" content="#111111" />
+<meta property="og:image" content="/assets/img/og-image.png" />
+<meta name="twitter:card" content="summary" />
+<meta name="twitter:image" content="/assets/img/og-image.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Sora:wght@600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/assets/css/locked.css?v=1" />
+<script>
+(function () {
+  try {
+    if (localStorage.getItem('se_theme') === 'dark') {
+      document.documentElement.setAttribute('data-theme', 'dark');
+    }
+  } catch (_) {}
+})();
+</script>
+</head>
+<body>
+  <div class="card" id="statusCard" hidden>
+    <div class="icon" aria-hidden="true">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+        <path d="M7 11V8a5 5 0 0 1 10 0v3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+        <rect x="5" y="11" width="14" height="10" rx="2.5" stroke="currentColor" stroke-width="1.7"/>
+      </svg>
+    </div>
+    <h1 id="lockTitle">Access locked</h1>
+    <p id="lockMessage">You need permission or a password to open this file.</p>
+    <a class="btn" href="/">Go to home</a>
+    <p class="brand">Shree's Extractions</p>
+  </div>
+  <script src="/assets/js/se-store.js?v=3"></script>
+  <script src="/assets/js/se-api.js?v=1"></script>
+  <script>
+  (async function () {
+    const params = new URLSearchParams(window.location.search);
+    const itemId = Number(params.get('item_id') || 0);
+    const mode = params.get('mode') === 'view' ? 'view' : 'download';
+    const card = document.getElementById('statusCard');
+    const titleEl = document.getElementById('lockTitle');
+    const msgEl = document.getElementById('lockMessage');
+
+    function showFail(title, message) {
+      if (titleEl) titleEl.textContent = title;
+      if (msgEl) msgEl.textContent = message;
+      if (card) card.hidden = false;
+      document.title = title + " — Shree's Extractions";
+    }
+
+    try {
+      if (!window.SEStore) {
+        showFail('Unavailable', 'Storage is not ready. Open the home page first, then try again.');
+        return;
+      }
+      await window.SEStore.init();
+      let result;
+      if (typeof window.SEStore.downloadFile === 'function') {
+        result = await window.SEStore.downloadFile(itemId, mode);
+      } else {
+        const resp = await fetch(
+          '/api/download?item_id=' + encodeURIComponent(itemId) + '&mode=' + encodeURIComponent(mode),
+          { method: 'GET', credentials: 'include' }
+        );
+        if (!resp.ok) {
+          if (resp.status === 403) showFail('Access locked', 'You need permission or a password to open this file.');
+          else showFail('Not found', 'That file is missing or no longer available.');
+          return;
+        }
+        const blob = await resp.blob();
+        const cd = resp.headers.get('Content-Disposition') || '';
+        const m = /filename="?([^";]+)"?/i.exec(cd);
+        result = { ok: true, blob: blob, filename: m ? decodeURIComponent(m[1]) : 'download', canPreview: mode === 'view', title: 'File' };
+      }
+
+      if (!result || !result.ok) {
+        const err = (result && result.error) || 'locked';
+        if (err === 'locked') showFail('Access locked', 'You need permission or a password to open this file.');
+        else if (err === 'notfound') showFail('Not found', 'That file is missing or no longer available.');
+        else showFail('Unavailable', result.error || 'Could not open this file.');
+        return;
+      }
+
+      const url = URL.createObjectURL(result.blob);
+      if (mode === 'view' && result.canPreview) {
+        window.location.replace(url);
+      } else {
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = result.filename || 'download';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(function () { URL.revokeObjectURL(url); }, 60_000);
+        showFail('Download started', result.title ? ('Saving “' + result.title + '”.') : 'Your download should begin shortly.');
+        if (titleEl) titleEl.textContent = 'Download started';
+        const icon = card && card.querySelector('.icon');
+        if (icon) icon.style.display = 'none';
+      }
+    } catch (e) {
+      showFail('Unavailable', 'Could not open this file.');
+    }
+  })();
+  </script>
+</body>
+</html>

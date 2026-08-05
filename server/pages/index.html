@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en" class="auth-pending">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" />
+<meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate" />
+<meta http-equiv="Pragma" content="no-cache" />
+  <title>Upload — Shree's Extractions</title>
+<link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml" />
+<link rel="icon" href="/assets/img/favicon-32.png" type="image/png" sizes="32x32" />
+<link rel="icon" href="/assets/img/favicon-48.png" type="image/png" sizes="48x48" />
+<link rel="shortcut icon" href="/favicon.ico" />
+<link rel="apple-touch-icon" href="/assets/img/apple-touch-icon.png" sizes="180x180" />
+<meta name="theme-color" content="#111111" />
+<meta property="og:image" content="/assets/img/og-image.png" />
+<meta name="twitter:card" content="summary" />
+<meta name="twitter:image" content="/assets/img/og-image.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Sora:wght@500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/assets/css/motion.css?v=1" />
+  <link rel="stylesheet" href="/assets/css/app.css?v=21" />
+  <link rel="stylesheet" href="/assets/css/se-chat.css?v=5" />
+<script>
+(function () {
+  try {
+    if (localStorage.getItem('se_theme') === 'dark') {
+      document.documentElement.setAttribute('data-theme', 'dark');
+    }
+  } catch (_) {}
+})();
+</script>
+</head>
+<body class="admin-body">
+<nav class="app-nav" aria-label="Main">
+  <a class="nav-btn" href="/">&larr; Back</a>
+  <div class="app-nav-end">
+    <span class="nav-user" data-se-username></span>
+    <a class="nav-btn" href="/?browse=1">Find people</a>
+    <a class="nav-btn" href="/app/account.html">Account</a>
+    <button type="button" class="nav-btn" id="themeToggle" aria-label="Toggle dark mode" aria-pressed="false">Dark</button>
+    <a class="nav-btn nav-btn-dark" href="#" data-se-logout="1">Logout</a>
+  </div>
+</nav>
+  <header class="admin-top">
+    <div>
+      <h1>Upload files</h1>
+    </div>
+  </header>
+
+  <main class="admin-grid">
+    <section class="panel upload-panel">
+      <h2>Upload file</h2>
+      <p class="hint">Choose if the file needs a password, or leave it open for anyone.</p>
+      <div id="flashBox"></div>
+      <form method="post" enctype="multipart/form-data" class="upload-form">
+        <input type="hidden" name="action" value="upload" />
+        <label>
+          <span>Title</span>
+          <input type="text" name="title" maxlength="180" required placeholder="File title" />
+        </label>
+        <label>
+          <span>Description (optional)</span>
+          <textarea name="description" rows="3" placeholder="Short note for visitors"></textarea>
+        </label>
+        <div class="file-field">
+          <span class="field-label">File</span>
+          <label class="dropzone" id="dropzone" for="fileInput">
+            <input id="fileInput" type="file" name="file" required />
+            <span class="dropzone-icon" aria-hidden="true">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+                <path d="M12 16V4m0 0l-4 4m4-4l4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M4 14v3.5A2.5 2.5 0 0 0 6.5 20h11a2.5 2.5 0 0 0 2.5-2.5V14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+              </svg>
+            </span>
+            <span class="dropzone-title">Drop a file here</span>
+            <span class="dropzone-sub" id="fileName">or click to browse — max 1 GB</span>
+          </label>
+        </div>
+        <label class="check-row">
+          <input type="checkbox" name="require_password" value="1" checked />
+          <span>Require password / permission to open</span>
+        </label>
+        <button type="submit">Upload</button>
+      </form>
+    </section>
+
+    <section class="panel notif-panel" id="access-requests">
+      <div class="panel-head">
+        <h2>Access requests</h2>
+        <div class="panel-actions">
+          <button type="button" id="clearDone" class="ghost small">Clear done</button>
+          <button type="button" id="markAll" class="ghost small">Mark all read</button>
+        </div>
+      </div>
+      <p class="hint">Stay on this page — new password requests pop up here right away.</p>
+      <div id="liveToast" class="live-toast" hidden role="status" aria-live="polite"></div>
+      <div id="notifBell" class="notif-bell" hidden>
+        <span class="pulse"></span>
+        <strong id="unreadCount">0</strong> new request(s)
+      </div>
+      <ul id="notifList" class="notif-list"></ul>
+    </section>
+
+    <section class="panel items-panel">
+      <div class="items-panel-head">
+        <h2>Your files</h2>
+        <p class="items-panel-hint" id="ownerFileHint" hidden></p>
+      </div>
+      <div id="ownerItemsMount"></div>
+    </section>
+  </main>
+
+  <audio id="ping" preload="auto">
+    <source src="/assets/sfx/notify.wav" type="audio/wav" />
+  </audio>
+  <script src="/assets/js/se-store.js?v=8"></script>
+  <script src="/assets/js/se-api.js?v=1"></script>
+  <script src="/assets/js/se-auth.js?v=5"></script>
+  <script src="/assets/js/se-upload-page.js?v=7"></script>
+  <script src="/assets/js/se-chat.js?v=4"></script>
+  <script src="/assets/js/app.js?v=22"></script>
+<script src="/assets/js/theme.js?v=2" defer></script>
+</body>
+</html>

@@ -1,0 +1,202 @@
+/* Shared smooth motion — transform/opacity only (GPU-friendly). */
+:root {
+  --motion-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --motion-fast: 180ms;
+  --motion-med: 320ms;
+  --motion-slow: 480ms;
+}
+
+@keyframes se-fade-up {
+  from { opacity: 0; transform: translate3d(0, 14px, 0); }
+  to { opacity: 1; transform: translate3d(0, 0, 0); }
+}
+
+@keyframes se-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes se-scale-in {
+  from { opacity: 0; transform: translate3d(0, 10px, 0) scale(0.98); }
+  to { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
+}
+
+@keyframes se-sheet-up {
+  from { opacity: 0; transform: translate3d(0, 24px, 0); }
+  to { opacity: 1; transform: translate3d(0, 0, 0); }
+}
+
+@keyframes se-soft-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.015); }
+}
+
+.se-page-enter,
+.hero-inner,
+.login-wrap,
+.admin-top,
+.admin-grid > .panel,
+.account-box,
+.users-wrap > *,
+.files-wrap > .app-nav,
+.files .section-head {
+  animation: se-fade-up var(--motion-med) var(--motion-ease) both;
+}
+
+.hero .brand-hero {
+  animation: se-fade-up var(--motion-slow) var(--motion-ease) both;
+}
+
+.hero .hero-line {
+  animation: se-fade-up var(--motion-med) var(--motion-ease) 60ms both;
+}
+
+.hero .hero-actions {
+  animation: se-fade-up var(--motion-med) var(--motion-ease) 110ms both;
+}
+
+.hero .hero-auth {
+  animation: se-fade-up var(--motion-med) var(--motion-ease) 160ms both;
+}
+
+.login-wrap {
+  animation: se-scale-in var(--motion-med) var(--motion-ease) both;
+}
+
+.login-wrap h1,
+.login-wrap .sub,
+.login-wrap .login-form,
+.login-wrap .auth-switch {
+  animation: se-fade-up var(--motion-med) var(--motion-ease) both;
+}
+
+.login-wrap .sub { animation-delay: 40ms; }
+.login-wrap .login-form { animation-delay: 80ms; }
+.login-wrap .auth-switch { animation-delay: 120ms; }
+
+.login-back {
+  animation: se-fade-in var(--motion-fast) var(--motion-ease) both;
+}
+
+.admin-grid > .panel:nth-child(1) { animation-delay: 40ms; }
+.admin-grid > .panel:nth-child(2) { animation-delay: 90ms; }
+.admin-grid > .panel:nth-child(3) { animation-delay: 140ms; }
+
+.account-stack > .account-box:nth-child(1) { animation-delay: 40ms; }
+.account-stack > .account-box:nth-child(2) { animation-delay: 100ms; }
+
+.files-view.is-fast-in .files-wrap {
+  animation: se-fade-up var(--motion-med) var(--motion-ease) both;
+}
+
+.files.is-switching {
+  opacity: 0.55;
+  transform: translate3d(0, 6px, 0);
+  transition: opacity var(--motion-fast) var(--motion-ease), transform var(--motion-fast) var(--motion-ease);
+}
+
+.user-card {
+  opacity: 0;
+  animation: se-fade-up 280ms var(--motion-ease) both;
+}
+
+.user-card:nth-child(1) { animation-delay: 20ms; }
+.user-card:nth-child(2) { animation-delay: 50ms; }
+.user-card:nth-child(3) { animation-delay: 80ms; }
+.user-card:nth-child(4) { animation-delay: 110ms; }
+.user-card:nth-child(5) { animation-delay: 140ms; }
+.user-card:nth-child(6) { animation-delay: 170ms; }
+.user-card:nth-child(n+7) { animation-delay: 190ms; }
+
+.user-card:hover {
+  transform: translate3d(0, -2px, 0);
+  transition: transform var(--motion-fast) var(--motion-ease), border-color var(--motion-fast) ease, background var(--motion-fast) ease;
+}
+
+.user-card.is-opening {
+  animation: se-soft-pulse 280ms var(--motion-ease);
+}
+
+.profile-banner.is-in {
+  animation: se-fade-up 300ms var(--motion-ease) both;
+}
+
+.list.is-entering .row {
+  opacity: 0;
+  animation: se-fade-up 280ms var(--motion-ease) both;
+}
+
+.list.is-entering .row:nth-child(1) { animation-delay: 30ms; }
+.list.is-entering .row:nth-child(2) { animation-delay: 70ms; }
+.list.is-entering .row:nth-child(3) { animation-delay: 110ms; }
+.list.is-entering .row:nth-child(4) { animation-delay: 150ms; }
+.list.is-entering .row:nth-child(5) { animation-delay: 180ms; }
+.list.is-entering .row:nth-child(6) { animation-delay: 210ms; }
+
+.row {
+  transition: transform var(--motion-fast) var(--motion-ease), border-color var(--motion-fast) ease, background var(--motion-fast) ease;
+}
+
+.row:hover {
+  transform: translate3d(0, -1px, 0);
+}
+
+.modal:not([hidden]) {
+  animation: se-fade-in var(--motion-fast) ease both;
+}
+
+.modal:not([hidden]) .sheet {
+  animation: se-sheet-up var(--motion-med) var(--motion-ease) both;
+}
+
+.btn,
+.nav-btn,
+.search-submit,
+.login-form button[type="submit"] {
+  transition: transform var(--motion-fast) var(--motion-ease), background var(--motion-fast) ease, box-shadow var(--motion-fast) ease, border-color var(--motion-fast) ease;
+}
+
+.btn:hover,
+.nav-btn:hover,
+.search-submit:hover,
+.login-form button[type="submit"]:hover {
+  transform: translate3d(0, -1px, 0);
+}
+
+.btn:active,
+.nav-btn:active,
+.search-submit:active,
+.login-form button[type="submit"]:active {
+  transform: translate3d(0, 0, 0) scale(0.98);
+}
+
+.theme-toggle {
+  transition: transform var(--motion-fast) var(--motion-ease), background var(--motion-fast) ease, color var(--motion-fast) ease;
+}
+
+.theme-toggle:hover {
+  transform: translate3d(0, -1px, 0);
+}
+
+/* View crossfade helpers used by JS */
+.se-view-out {
+  opacity: 0;
+  transform: translate3d(0, 8px, 0);
+  transition: opacity var(--motion-fast) var(--motion-ease), transform var(--motion-fast) var(--motion-ease);
+  pointer-events: none;
+}
+
+.se-view-in {
+  animation: se-fade-up var(--motion-med) var(--motion-ease) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

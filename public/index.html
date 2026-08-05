@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Shree's Extractions</title>
+  <meta name="description" content="Sign in to search people, see their files, and request access when needed." />
+<link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml" />
+<link rel="icon" href="/assets/img/favicon-32.png" type="image/png" sizes="32x32" />
+<link rel="icon" href="/assets/img/favicon-48.png" type="image/png" sizes="48x48" />
+<link rel="shortcut icon" href="/favicon.ico" />
+<link rel="apple-touch-icon" href="/assets/img/apple-touch-icon.png" sizes="180x180" />
+<meta name="theme-color" content="#111111" />
+<meta property="og:image" content="/assets/img/og-image.png" />
+<meta name="twitter:card" content="summary" />
+<meta name="twitter:image" content="/assets/img/og-image.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@500;600;700&family=Sora:wght@700&display=swap" rel="stylesheet" media="print" onload="this.media='all'" />
+  <noscript><link href="https://fonts.googleapis.com/css2?family=Figtree:wght@500;600;700&family=Sora:wght@700&display=swap" rel="stylesheet" /></noscript>
+  <link rel="stylesheet" href="/assets/css/motion.css?v=1" />
+  <link rel="stylesheet" href="/assets/css/public.css?v=47" />
+  <link rel="stylesheet" href="/assets/css/se-chat.css?v=5" />
+<script>
+(function () {
+  try {
+    if (localStorage.getItem('se_theme') === 'dark') {
+      document.documentElement.setAttribute('data-theme', 'dark');
+    }
+  } catch (_) {}
+})();
+</script>
+</head>
+<body class="view-landing" data-logged-in="0">
+  <div class="bg" aria-hidden="true"></div>
+
+  <section class="hero" id="landing">
+    <div class="hero-inner">
+      <h1 class="brand-hero">Shree's Extractions</h1>
+      <div id="heroContent">
+        <p class="hero-line">Sign in or sign up first. Then you can find people and use files.</p>
+        <div class="hero-actions">
+          <a class="btn" href="/app/login.html">Sign in</a>
+          <a class="btn btn-ghost" href="/app/register.html">Sign up</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div id="browseMount"></div>
+
+  <script src="/assets/js/se-store.js?v=8"></script>
+  <script src="/assets/js/se-api.js?v=1"></script>
+  <script src="/assets/js/se-auth.js?v=8"></script>
+  <script src="/assets/js/se-home.js?v=11"></script>
+  <script src="/assets/js/se-chat.js?v=4"></script>
+  <script src="/assets/js/public.js?v=42" defer></script>
+<script>
+(function () {
+  if (!document.getElementById('themeToggle')) {
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'theme-toggle';
+    b.id = 'themeToggle';
+    b.setAttribute('aria-label', 'Toggle dark mode');
+    b.setAttribute('aria-pressed', 'false');
+    b.textContent = 'Dark';
+    document.body.appendChild(b);
+  }
+})();
+</script>
+<script src="/assets/js/theme.js?v=2" defer></script>
+</body>
+</html>

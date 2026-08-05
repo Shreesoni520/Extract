@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Sign in — Shree's Extractions</title>
+<link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml" />
+<link rel="icon" href="/assets/img/favicon-32.png" type="image/png" sizes="32x32" />
+<link rel="icon" href="/assets/img/favicon-48.png" type="image/png" sizes="48x48" />
+<link rel="shortcut icon" href="/favicon.ico" />
+<link rel="apple-touch-icon" href="/assets/img/apple-touch-icon.png" sizes="180x180" />
+<meta name="theme-color" content="#111111" />
+<meta property="og:image" content="/assets/img/og-image.png" />
+<meta name="twitter:card" content="summary" />
+<meta name="twitter:image" content="/assets/img/og-image.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Sora:wght@500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/assets/css/motion.css?v=1" />
+  <link rel="stylesheet" href="/assets/css/app.css?v=20" />
+<script>
+(function () {
+  try {
+    if (localStorage.getItem('se_theme') === 'dark') {
+      document.documentElement.setAttribute('data-theme', 'dark');
+    }
+  } catch (_) {}
+})();
+</script>
+</head>
+<body class="login-body">
+  <a class="nav-btn login-back" href="/">&larr; Back</a>
+  <div class="login-wrap">
+    <h1>Sign in</h1>
+    <p class="sub">Sign in first to find people and use files.</p>
+    <div id="authAlert"></div>
+    <form method="post" class="login-form" autocomplete="off">
+      <label>
+        <span>Username</span>
+        <input type="text" name="username" required autofocus
+               autocapitalize="off" autocorrect="off" spellcheck="false"
+               placeholder="yourname" />
+      </label>
+      <label>
+        <span>Password</span>
+        <input type="password" name="password" required />
+      </label>
+      <button type="submit">Sign in</button>
+    </form>
+    <p class="auth-switch">
+      New here?
+      <a href="/app/register.html">Sign up</a>
+    </p>
+  </div>
+  <script src="/assets/js/se-store.js?v=4"></script>
+  <script src="/assets/js/se-api.js?v=1"></script>
+  <script src="/assets/js/se-auth.js?v=4"></script>
+<script>
+(function () {
+  if (!document.getElementById('themeToggle')) {
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'theme-toggle';
+    b.id = 'themeToggle';
+    b.setAttribute('aria-label', 'Toggle dark mode');
+    b.setAttribute('aria-pressed', 'false');
+    b.textContent = 'Dark';
+    document.body.appendChild(b);
+  }
+})();
+</script>
+<script src="/assets/js/theme.js?v=2" defer></script>
+</body>
+</html>

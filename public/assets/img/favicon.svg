@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="15 20 140 140" role="img">
+  <defs>
+    <linearGradient id="seFavMetal" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3a3a3a"/>
+      <stop offset="100%" stop-color="#111111"/>
+    </linearGradient>
+  </defs>
+  <rect x="15" y="20" width="140" height="140" rx="34" fill="url(#seFavMetal)"/>
+  <rect x="45" y="100" width="55" height="38" rx="5" fill="#666666"/>
+  <rect x="52" y="92" width="55" height="38" rx="5" fill="#999999"/>
+  <g transform="translate(0,-10) rotate(-8 85 80)">
+    <rect x="60" y="55" width="55" height="70" rx="6" fill="#ffffff"/>
+  </g>
+</svg>
