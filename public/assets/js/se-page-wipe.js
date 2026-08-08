@@ -1,12 +1,14 @@
 /**
- * Full-screen black wipe (rises up to cover, then lifts away).
- * Used on real page navigations + in-app view swaps.
+ * Full-screen black wipe — bottom → top.
+ * Cover: black rises from the bottom.
+ * Reveal: black keeps going up and lifts away.
+ * Plays on link navigations, in-app swaps, and every page load/reload.
  */
 (function () {
   'use strict';
 
-  const COVER_MS = 380;
-  const REVEAL_MS = 380;
+  const COVER_MS = 400;
+  const REVEAL_MS = 400;
   const FLAG = 'se_wipe_pending';
 
   function reducedMotion() {
@@ -36,7 +38,6 @@
     if (reducedMotion()) return;
     const veil = ensureVeil();
     veil.classList.remove('cover', 'reveal', 'is-soft');
-    // Restart animation
     void veil.offsetWidth;
     veil.classList.add(mode);
     await wait(mode === 'cover' ? COVER_MS : REVEAL_MS);
@@ -51,6 +52,13 @@
 
   async function reveal() {
     return play('reveal');
+  }
+
+  /** Full bottom→top cycle: rise up to cover, then continue up and leave. */
+  async function wipeUp() {
+    if (reducedMotion()) return;
+    await cover();
+    await reveal();
   }
 
   async function navigate(url) {
@@ -77,7 +85,6 @@
     const href = a.getAttribute('href');
     if (!href || href.startsWith('#') || href.startsWith('mailto:') || href.startsWith('tel:')) return false;
     if (!sameOrigin(href)) return false;
-    // Stay on same page hash-only already excluded
     try {
       const next = new URL(href, window.location.href);
       const cur = window.location;
@@ -97,41 +104,33 @@
     }, true);
   }
 
-  async function maybeRevealOnLoad() {
-    let pending = false;
+  async function playOnLoad() {
+    if (reducedMotion()) return;
     try {
-      pending = sessionStorage.getItem(FLAG) === '1';
       sessionStorage.removeItem(FLAG);
     } catch (_) {}
-    if (!pending || reducedMotion()) return;
-    const veil = ensureVeil();
-    // Start covered, then lift away upward
-    veil.classList.add('cover');
-    veil.style.transform = 'scaleY(1)';
-    veil.style.opacity = '1';
-    veil.style.transformOrigin = 'top center';
-    await wait(16);
-    veil.style.transform = '';
-    veil.style.opacity = '';
-    await reveal();
+    // Let the page paint once, then run bottom→top wipe on every load/reload.
+    await wait(50);
+    await wipeUp();
   }
 
   window.SE_pageWipe = {
     cover,
     reveal,
+    wipeUp,
     navigate,
     ensureVeil,
   };
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => {
-      ensureVeil();
-      bindLinkWipes();
-      maybeRevealOnLoad();
-    });
-  } else {
+  function boot() {
     ensureVeil();
     bindLinkWipes();
-    maybeRevealOnLoad();
+    playOnLoad();
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', boot);
+  } else {
+    boot();
   }
 })();

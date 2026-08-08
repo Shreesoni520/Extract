@@ -10,7 +10,9 @@
   --wipe-ms: 380ms;
 }
 
-/* Black wipe: rises from bottom to cover, then lifts up and away. */
+/* Black wipe — always bottom → top.
+   Cover: grows upward from the bottom.
+   Reveal: exits upward (keeps moving up and away). */
 .page-veil {
   position: fixed;
   inset: 0;
@@ -24,6 +26,7 @@
 
 .page-veil.cover {
   pointer-events: auto;
+  transform-origin: bottom center;
   animation: se-veil-cover var(--wipe-ms) var(--wipe-ease) forwards;
 }
 
