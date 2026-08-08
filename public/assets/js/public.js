@@ -291,7 +291,7 @@
 
     if (animate && landing) {
       landing.classList.add('se-view-out');
-      await wait(120);
+      await wait(180);
     }
 
     if (landing) {
@@ -327,7 +327,7 @@
 
     if (animate && filesView) {
       filesView.classList.add('se-view-out');
-      await wait(120);
+      await wait(180);
     }
 
     if (filesView) {
