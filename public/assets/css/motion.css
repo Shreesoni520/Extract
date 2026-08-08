@@ -6,6 +6,41 @@
   --motion-fast: 200ms;
   --motion-med: 360ms;
   --motion-slow: 520ms;
+  --wipe-ease: cubic-bezier(0.65, 0, 0.35, 1);
+  --wipe-ms: 380ms;
+}
+
+/* Black wipe: rises from bottom to cover, then lifts up and away. */
+.page-veil {
+  position: fixed;
+  inset: 0;
+  z-index: 100000;
+  pointer-events: none;
+  background: #000000;
+  transform: scaleY(0);
+  transform-origin: bottom center;
+  opacity: 0;
+}
+
+.page-veil.cover {
+  pointer-events: auto;
+  animation: se-veil-cover var(--wipe-ms) var(--wipe-ease) forwards;
+}
+
+.page-veil.reveal {
+  pointer-events: none;
+  transform-origin: top center;
+  animation: se-veil-reveal var(--wipe-ms) var(--wipe-ease) forwards;
+}
+
+@keyframes se-veil-cover {
+  from { transform: scaleY(0); opacity: 1; }
+  to { transform: scaleY(1); opacity: 1; }
+}
+
+@keyframes se-veil-reveal {
+  from { transform: scaleY(1); opacity: 1; }
+  to { transform: scaleY(0); opacity: 1; }
 }
 
 html {

@@ -73,9 +73,19 @@
     return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
-  // Instant view swap — no full-screen wipe (that felt laggy).
-  async function blackWipeCover() { return; }
-  async function blackWipeReveal() { return; }
+  async function blackWipeCover() {
+    if (window.SE_pageWipe && typeof window.SE_pageWipe.cover === 'function') {
+      await window.SE_pageWipe.cover();
+      return;
+    }
+  }
+
+  async function blackWipeReveal() {
+    if (window.SE_pageWipe && typeof window.SE_pageWipe.reveal === 'function') {
+      await window.SE_pageWipe.reveal();
+      return;
+    }
+  }
 
   function escapeHtml(str) {
     return String(str ?? '')
@@ -290,10 +300,7 @@
     if (browseBtn) browseBtn.disabled = true;
     if (backBtn) backBtn.disabled = true;
 
-    if (animate && landing) {
-      landing.classList.add('se-view-out');
-      await wait(160);
-    }
+    if (animate) await blackWipeCover();
 
     if (landing) {
       landing.hidden = true;
@@ -314,6 +321,8 @@
     if (searchInput) searchInput.value = '';
     renderUsers([], '');
 
+    if (animate) await blackWipeReveal();
+
     if (browseBtn) browseBtn.disabled = false;
     if (backBtn) backBtn.disabled = false;
     transitioning = false;
@@ -326,10 +335,7 @@
     if (browseBtn) browseBtn.disabled = true;
     if (backBtn) backBtn.disabled = true;
 
-    if (animate && filesView) {
-      filesView.classList.add('se-view-out');
-      await wait(160);
-    }
+    if (animate) await blackWipeCover();
 
     if (filesView) {
       filesView.hidden = true;
@@ -355,6 +361,8 @@
     selectedUser = null;
     currentQuery = '';
     if (searchInput) searchInput.value = '';
+
+    if (animate) await blackWipeReveal();
 
     if (browseBtn) browseBtn.disabled = false;
     if (backBtn) backBtn.disabled = false;

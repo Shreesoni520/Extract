@@ -18,7 +18,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Sora:wght@500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/assets/css/motion.css?v=2" />
+  <link rel="stylesheet" href="/assets/css/motion.css?v=3" />
   <link rel="stylesheet" href="/assets/css/app.css?v=23" />
   <link rel="stylesheet" href="/assets/css/users.css?v=1" />
 <script>
@@ -34,6 +34,7 @@
 </script>
 </head>
 <body class="admin-body">
+  <div id="pageVeil" class="page-veil" aria-hidden="true"></div>
 <nav class="app-nav" aria-label="Main">
   <a class="nav-btn" href="/">&larr; Back</a>
   <div class="app-nav-end">
@@ -82,9 +83,10 @@
       <div class="item-table" style="margin-top: 1rem;" id="usersMount"></div>
     </section>
   </main>
+  <script src="/assets/js/se-page-wipe.js?v=1"></script>
   <script src="/assets/js/se-store.js?v=10"></script>
   <script src="/assets/js/se-api.js?v=1"></script>
-  <script src="/assets/js/se-auth.js?v=11"></script>
+  <script src="/assets/js/se-auth.js?v=12"></script>
   <script src="/assets/js/se-users-page.js?v=4"></script>
 <script src="/assets/js/theme.js?v=3" defer></script>
 </body>
