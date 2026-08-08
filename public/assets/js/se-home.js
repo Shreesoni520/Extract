@@ -146,6 +146,17 @@
     // Logout is bound by se-auth.js via [data-se-logout] (and re-bound on se-home-ready).
   }
 
+  function mountBrowseOnce() {
+    const mount = document.getElementById('browseMount');
+    if (mount && !document.getElementById('filesView')) {
+      mount.innerHTML = browseSectionHtml();
+    }
+    if (!window.__SE_HOME_READY_FIRED) {
+      window.__SE_HOME_READY_FIRED = true;
+      window.dispatchEvent(new Event('se-home-ready'));
+    }
+  }
+
   async function initHome() {
     if (window.__SE_HOME_INIT) return;
     window.__SE_HOME_INIT = true;
@@ -167,38 +178,68 @@
       }
     }
 
-    // Wait for the real session once, then paint once.
-    // (Painting from hint AND again after /me looked like a double reload.)
-    if (window.SEStore) {
-      await window.SEStore.init({ force: !!forcedLogout });
-      if (typeof window.SEStore.whenReady === 'function') {
-        try { await window.SEStore.whenReady(); } catch (_) {}
-      }
-    }
-
     const openBrowse = params.get('browse') === '1';
-    const loggedIn = !forcedLogout && !!(window.SEStore && window.SEStore.adminLoggedIn());
-    window.SE_LOGGED_IN = loggedIn;
-    window.SE_OPEN_BROWSE = loggedIn && openBrowse;
+    const hint = (!forcedLogout && window.SEStore && window.SEStore.readUserHint)
+      ? window.SEStore.readUserHint()
+      : null;
 
-    const body = document.body;
-    if (body) body.setAttribute('data-logged-in', loggedIn ? '1' : '0');
-
-    if (loggedIn) {
-      const u = window.SEStore.getCurrentUser();
-      paintHero(true, u && u.username);
-      bindHomeActions();
-
-      const mount = document.getElementById('browseMount');
-      if (mount && !document.getElementById('filesView')) {
-        mount.innerHTML = browseSectionHtml();
-      }
-      window.dispatchEvent(new Event('se-home-ready'));
-    } else {
+    // Guest path: instant paint (no waiting) — same snappy feel as before.
+    if (!hint || !hint.username) {
       paintHero(false);
       bindHomeActions();
       window.SE_LOGGED_IN = false;
       window.SE_OPEN_BROWSE = false;
+      document.body?.setAttribute('data-logged-in', '0');
+
+      if (!window.SEStore) return;
+      await window.SEStore.init({ force: !!forcedLogout });
+      if (typeof window.SEStore.whenReady === 'function') {
+        try { await window.SEStore.whenReady(); } catch (_) {}
+      }
+      // Only upgrade if a real session exists (no hint yet, e.g. first login cookie).
+      if (!forcedLogout && window.SEStore.adminLoggedIn()) {
+        const u = window.SEStore.getCurrentUser();
+        paintHero(true, u && u.username);
+        bindHomeActions();
+        window.SE_LOGGED_IN = true;
+        window.SE_OPEN_BROWSE = openBrowse;
+        document.body?.setAttribute('data-logged-in', '1');
+        mountBrowseOnce();
+      }
+      return;
+    }
+
+    // Logged-in path: paint once from hint (instant), confirm session quietly.
+    // Do NOT paint again after /me unless the username changed or session is gone.
+    paintHero(true, hint.username);
+    bindHomeActions();
+    window.SE_LOGGED_IN = true;
+    window.SE_OPEN_BROWSE = openBrowse;
+    document.body?.setAttribute('data-logged-in', '1');
+    mountBrowseOnce();
+
+    if (!window.SEStore) return;
+    await window.SEStore.init({ force: !!forcedLogout });
+    if (typeof window.SEStore.whenReady === 'function') {
+      try { await window.SEStore.whenReady(); } catch (_) {}
+    }
+
+    if (forcedLogout || !window.SEStore.adminLoggedIn()) {
+      window.SE_LOGGED_IN = false;
+      window.SE_OPEN_BROWSE = false;
+      document.body?.setAttribute('data-logged-in', '0');
+      paintHero(false);
+      bindHomeActions();
+      const mount = document.getElementById('browseMount');
+      if (mount) mount.innerHTML = '';
+      return;
+    }
+
+    const u = window.SEStore.getCurrentUser();
+    const name = u && u.username ? String(u.username) : '';
+    if (name && name !== String(hint.username || '')) {
+      paintHero(true, name);
+      bindHomeActions();
     }
   }
 
