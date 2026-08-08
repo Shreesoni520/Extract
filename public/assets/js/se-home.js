@@ -147,31 +147,33 @@
   }
 
   async function initHome() {
+    if (window.__SE_HOME_INIT) return;
+    window.__SE_HOME_INIT = true;
+
     const params = new URLSearchParams(window.location.search);
     const forcedLogout = params.get('logged_out') === '1';
     if (forcedLogout) {
       try { sessionStorage.removeItem('se_user_hint'); } catch (_) {}
       if (window.SEStore && typeof window.SEStore.logout === 'function') {
-        // Best-effort server clear if the click path was interrupted.
-        try { await Promise.race([window.SEStore.logout(), new Promise((r) => setTimeout(r, 1500))]); } catch (_) {}
+        try {
+          await Promise.race([
+            window.SEStore.logout(),
+            new Promise((r) => setTimeout(r, 1200)),
+          ]);
+        } catch (_) {}
+      }
+      if (window.history && window.history.replaceState) {
+        try { window.history.replaceState({}, '', `${root()}/`); } catch (_) {}
       }
     }
 
-    // Instant first paint from session hint (no waiting on /me).
-    const hint = (!forcedLogout && window.SEStore && window.SEStore.readUserHint)
-      ? window.SEStore.readUserHint()
-      : null;
-    if (hint && hint.username) paintHero(true, hint.username);
-    else paintHero(false);
-    bindHomeActions();
-
+    // Wait for the real session once, then paint once.
+    // (Painting from hint AND again after /me looked like a double reload.)
     if (window.SEStore) {
-      await window.SEStore.init({ force: forcedLogout });
-    }
-
-    // Drop the query flag so refresh doesn't keep forcing logout.
-    if (forcedLogout && window.history && window.history.replaceState) {
-      try { window.history.replaceState({}, '', `${root()}/`); } catch (_) {}
+      await window.SEStore.init({ force: !!forcedLogout });
+      if (typeof window.SEStore.whenReady === 'function') {
+        try { await window.SEStore.whenReady(); } catch (_) {}
+      }
     }
 
     const openBrowse = params.get('browse') === '1';
@@ -192,18 +194,9 @@
         mount.innerHTML = browseSectionHtml();
       }
       window.dispatchEvent(new Event('se-home-ready'));
-
-      // Confirm session in background; bounce to guest UI if cookie expired.
-      if (window.SEStore.whenReady) {
-        window.SEStore.whenReady().then((confirmed) => {
-          if (confirmed) return;
-          window.SE_LOGGED_IN = false;
-          paintHero(false);
-          bindHomeActions();
-          if (mount) mount.innerHTML = '';
-        });
-      }
     } else {
+      paintHero(false);
+      bindHomeActions();
       window.SE_LOGGED_IN = false;
       window.SE_OPEN_BROWSE = false;
     }

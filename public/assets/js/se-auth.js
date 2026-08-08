@@ -134,8 +134,15 @@
         || /^\/Extract\/?$/i.test(path)
         || /^\/Extract\/index\.html$/i.test(path);
 
-      // Home already calls SEStore.init — avoid a second forced /me round-trip.
-      await window.SEStore.init({ force: !isHome });
+      // Landing page: se-home.js owns the single session init + hero paint.
+      if (isHome) {
+        bindLogoutLinks();
+        document.addEventListener('se-home-ready', bindLogoutLinks);
+        unstickAuthGate();
+        return;
+      }
+
+      await window.SEStore.init({ force: true });
 
       // Old links used login.html#logout — handle that without bouncing other pages.
       if (isLogin && /logout/i.test(window.location.hash || '')) {
@@ -164,16 +171,23 @@
         const form = document.querySelector('form.login-form');
         form?.addEventListener('submit', async (e) => {
           e.preventDefault();
+          if (form.dataset.seBusy === '1') return;
+          form.dataset.seBusy = '1';
           const btn = form.querySelector('button[type="submit"]');
           if (btn) btn.disabled = true;
           try {
             const fd = new FormData(form);
             const res = await window.SEStore.login(fd.get('username'), fd.get('password'));
-            if (res && res.ok) redirect(homeUrl());
-            else showAlert(document.getElementById('authAlert'), (res && res.error) || 'Login failed.', false);
+            if (res && res.ok) {
+              redirect(safeNextPath() || homeUrl());
+              return;
+            }
+            showAlert(document.getElementById('authAlert'), (res && res.error) || 'Login failed.', false);
+            form.dataset.seBusy = '0';
+            if (btn) btn.disabled = false;
           } catch (_) {
             showAlert(document.getElementById('authAlert'), 'Login failed. Please try again.', false);
-          } finally {
+            form.dataset.seBusy = '0';
             if (btn) btn.disabled = false;
           }
         });
@@ -225,33 +239,37 @@
 
         form?.addEventListener('submit', async (e) => {
           e.preventDefault();
+          if (form.dataset.seBusy === '1') return;
+          form.dataset.seBusy = '1';
           const btn = form.querySelector('button[type="submit"]');
           if (btn) btn.disabled = true;
           try {
             const fd = new FormData(form);
             const res = await window.SEStore.register(fd.get('username'), fd.get('password'), fd.get('confirm'));
-            if (res && res.ok) redirect(homeUrl());
-            else {
-              const msg = (res && res.error) || 'Registration failed.';
-              showAlert(document.getElementById('authAlert'), msg, false);
-              if (res && (res.code === 'USERNAME_TAKEN' || /already registered|already taken|not available|in use/i.test(msg))) {
-                if (hint) {
-                  hint.hidden = false;
-                  hint.className = 'field-hint bad';
-                  hint.textContent = msg;
-                }
+            if (res && res.ok) {
+              redirect(homeUrl());
+              return;
+            }
+            const msg = (res && res.error) || 'Registration failed.';
+            showAlert(document.getElementById('authAlert'), msg, false);
+            if (res && (res.code === 'USERNAME_TAKEN' || /already registered|already taken|not available|in use/i.test(msg))) {
+              if (hint) {
+                hint.hidden = false;
+                hint.className = 'field-hint bad';
+                hint.textContent = msg;
               }
             }
+            form.dataset.seBusy = '0';
+            if (btn) btn.disabled = false;
           } catch (_) {
             showAlert(document.getElementById('authAlert'), 'Registration failed. Please try again.', false);
-          } finally {
+            form.dataset.seBusy = '0';
             if (btn) btn.disabled = false;
           }
         });
       }
 
       bindLogoutLinks();
-      // Re-bind after home injects browse nav / hero logout links.
       document.addEventListener('se-home-ready', bindLogoutLinks);
     } catch (_) {
       unstickAuthGate();
