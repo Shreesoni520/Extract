@@ -7,10 +7,6 @@
   }
 
   function redirect(path) {
-    if (window.SE_pageWipe && typeof window.SE_pageWipe.navigate === 'function') {
-      window.SE_pageWipe.navigate(path);
-      return;
-    }
     window.location.replace(path);
   }
 
@@ -92,12 +88,7 @@
 
   function goLoggedOut() {
     clearLocalSession();
-    const dest = `${homeUrl()}?logged_out=1`;
-    if (window.SE_pageWipe && typeof window.SE_pageWipe.navigate === 'function') {
-      window.SE_pageWipe.navigate(dest);
-      return;
-    }
-    window.location.replace(dest);
+    window.location.replace(`${homeUrl()}?logged_out=1`);
   }
 
   function bindLogoutLinks() {

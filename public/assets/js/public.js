@@ -73,19 +73,8 @@
     return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
-  async function blackWipeCover() {
-    if (window.SE_pageWipe && typeof window.SE_pageWipe.cover === 'function') {
-      await window.SE_pageWipe.cover();
-      return;
-    }
-  }
-
-  async function blackWipeReveal() {
-    if (window.SE_pageWipe && typeof window.SE_pageWipe.reveal === 'function') {
-      await window.SE_pageWipe.reveal();
-      return;
-    }
-  }
+  async function blackWipeCover() { return; }
+  async function blackWipeReveal() { return; }
 
   function escapeHtml(str) {
     return String(str ?? '')
@@ -300,7 +289,10 @@
     if (browseBtn) browseBtn.disabled = true;
     if (backBtn) backBtn.disabled = true;
 
-    if (animate) await blackWipeCover();
+    if (animate && landing) {
+      landing.classList.add('se-view-out');
+      await wait(180);
+    }
 
     if (landing) {
       landing.hidden = true;
@@ -321,8 +313,6 @@
     if (searchInput) searchInput.value = '';
     renderUsers([], '');
 
-    if (animate) await blackWipeReveal();
-
     if (browseBtn) browseBtn.disabled = false;
     if (backBtn) backBtn.disabled = false;
     transitioning = false;
@@ -335,7 +325,10 @@
     if (browseBtn) browseBtn.disabled = true;
     if (backBtn) backBtn.disabled = true;
 
-    if (animate) await blackWipeCover();
+    if (animate && filesView) {
+      filesView.classList.add('se-view-out');
+      await wait(180);
+    }
 
     if (filesView) {
       filesView.hidden = true;
@@ -361,8 +354,6 @@
     selectedUser = null;
     currentQuery = '';
     if (searchInput) searchInput.value = '';
-
-    if (animate) await blackWipeReveal();
 
     if (browseBtn) browseBtn.disabled = false;
     if (backBtn) backBtn.disabled = false;

@@ -17,7 +17,7 @@
 
   function heroGuest() {
     return `
-<p class="hero-line">Sign in or sign up first. Then you can find people and use files.</p>
+<p class="hero-line">Private file sharing for people you trust. Sign in to find someone and open their files.</p>
 <div class="hero-actions">
   <a class="btn" href="${root()}/app/login.html">Sign in</a>
   <a class="btn btn-ghost" href="${root()}/app/register.html">Sign up</a>
@@ -26,7 +26,7 @@
 
   function heroLoggedIn(username) {
     return `
-<p class="hero-line">Hi ${escapeText(username)}. Search people and open their files.</p>
+<p class="hero-line">Welcome back, ${escapeText(username)}. Find people, open files, or upload something new.</p>
 <div class="hero-actions">
   <button class="btn" id="browseBtn" type="button">Find people</button>
   <a class="btn btn-ghost" href="${root()}/app/index.html">Upload files</a>
