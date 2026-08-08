@@ -25,13 +25,16 @@
   }
 
   function heroLoggedIn(username) {
+    const name = escapeText(username);
     return `
-<p class="hero-line">Welcome back, ${escapeText(username)}. Find people, open files, or upload something new.</p>
+<p class="hero-line">Private file sharing for people you trust. Find people, open files, or upload something new.</p>
 <div class="hero-actions">
   <button class="btn" id="browseBtn" type="button">Find people</button>
   <a class="btn btn-ghost" href="${root()}/app/index.html">Upload files</a>
 </div>
 <p class="hero-auth">
+  <span class="hero-user">@${name}</span>
+  &middot;
   <a href="${root()}/app/account.html">Account</a>
   &middot;
   <button type="button" class="linkish" id="logoutLink" data-se-logout="1">Logout</button>
@@ -126,7 +129,30 @@
   function paintHero(loggedIn, username) {
     const heroExtra = document.getElementById('heroContent');
     if (!heroExtra) return;
+    const key = loggedIn ? `in:${String(username || '').toLowerCase()}` : 'guest';
+    // Skip if already showing the same state — stops text flicker / lag.
+    if (heroExtra.dataset.seHero === key) return;
+    heroExtra.dataset.seHero = key;
     heroExtra.innerHTML = loggedIn ? heroLoggedIn(username) : heroGuest();
+  }
+
+  /** Paint from session hint before any async work (used by boot + init). */
+  function paintFromHintSync() {
+    if (window.SE_paintHeroFromHint) {
+      try { window.SE_paintHeroFromHint(); } catch (_) {}
+      return;
+    }
+    try {
+      const raw = sessionStorage.getItem('se_user_hint');
+      if (!raw) return false;
+      const u = JSON.parse(raw);
+      if (!u || !u.username) return false;
+      paintHero(true, u.username);
+      document.body?.setAttribute('data-logged-in', '1');
+      return true;
+    } catch (_) {
+      return false;
+    }
   }
 
   function bindHomeActions() {
@@ -179,44 +205,22 @@
     }
 
     const openBrowse = params.get('browse') === '1';
-    const hint = (!forcedLogout && window.SEStore && window.SEStore.readUserHint)
-      ? window.SEStore.readUserHint()
-      : null;
+    const hadHint = !forcedLogout && paintFromHintSync();
 
-    // Guest path: instant paint (no waiting) — same snappy feel as before.
-    if (!hint || !hint.username) {
-      paintHero(false);
+    if (hadHint) {
+      bindHomeActions();
+      window.SE_LOGGED_IN = true;
+      window.SE_OPEN_BROWSE = openBrowse;
+      mountBrowseOnce();
+    } else {
+      // Guest HTML is already in the page — don't rewrite it (avoids flicker).
+      const heroExtra = document.getElementById('heroContent');
+      if (heroExtra && !heroExtra.dataset.seHero) heroExtra.dataset.seHero = 'guest';
       bindHomeActions();
       window.SE_LOGGED_IN = false;
       window.SE_OPEN_BROWSE = false;
       document.body?.setAttribute('data-logged-in', '0');
-
-      if (!window.SEStore) return;
-      await window.SEStore.init({ force: !!forcedLogout });
-      if (typeof window.SEStore.whenReady === 'function') {
-        try { await window.SEStore.whenReady(); } catch (_) {}
-      }
-      // Only upgrade if a real session exists (no hint yet, e.g. first login cookie).
-      if (!forcedLogout && window.SEStore.adminLoggedIn()) {
-        const u = window.SEStore.getCurrentUser();
-        paintHero(true, u && u.username);
-        bindHomeActions();
-        window.SE_LOGGED_IN = true;
-        window.SE_OPEN_BROWSE = openBrowse;
-        document.body?.setAttribute('data-logged-in', '1');
-        mountBrowseOnce();
-      }
-      return;
     }
-
-    // Logged-in path: paint once from hint (instant), confirm session quietly.
-    // Do NOT paint again after /me unless the username changed or session is gone.
-    paintHero(true, hint.username);
-    bindHomeActions();
-    window.SE_LOGGED_IN = true;
-    window.SE_OPEN_BROWSE = openBrowse;
-    document.body?.setAttribute('data-logged-in', '1');
-    mountBrowseOnce();
 
     if (!window.SEStore) return;
     await window.SEStore.init({ force: !!forcedLogout });
@@ -236,11 +240,13 @@
     }
 
     const u = window.SEStore.getCurrentUser();
-    const name = u && u.username ? String(u.username) : '';
-    if (name && name !== String(hint.username || '')) {
-      paintHero(true, name);
-      bindHomeActions();
-    }
+    // paintHero no-ops if the same user is already shown.
+    paintHero(true, u && u.username);
+    bindHomeActions();
+    window.SE_LOGGED_IN = true;
+    window.SE_OPEN_BROWSE = openBrowse;
+    document.body?.setAttribute('data-logged-in', '1');
+    mountBrowseOnce();
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initHome);

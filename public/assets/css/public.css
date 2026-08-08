@@ -154,6 +154,11 @@ body.view-landing .bg {
   text-decoration: underline;
 }
 
+.hero-user {
+  color: var(--ink);
+  font-weight: 600;
+}
+
 .btn {
   display: inline-flex;
   align-items: center;

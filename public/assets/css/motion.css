@@ -20,18 +20,9 @@
   to { opacity: 1; transform: translate3d(0, 0, 0); }
 }
 
-/* Home only — short enter, no heavy stagger */
+/* Brand only — don't animate hero text/actions (they can be swapped after login). */
 .hero .brand-hero {
   animation: se-fade-up var(--motion-med) var(--motion-ease) both;
-}
-
-.hero .hero-line {
-  animation: se-fade-up var(--motion-med) var(--motion-ease) 40ms both;
-}
-
-.hero .hero-actions,
-.hero .hero-auth {
-  animation: se-fade-up var(--motion-med) var(--motion-ease) 80ms both;
 }
 
 .login-wrap {
