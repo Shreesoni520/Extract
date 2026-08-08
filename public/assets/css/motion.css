@@ -1,13 +1,45 @@
-/* Shared smooth motion — transform/opacity only (GPU-friendly). */
+/* Shared smooth motion — transform/opacity/colors only (GPU-friendly). */
 :root {
   --motion-ease: cubic-bezier(0.22, 1, 0.36, 1);
-  --motion-fast: 180ms;
-  --motion-med: 320ms;
-  --motion-slow: 480ms;
+  --motion-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --motion-ease-soft: cubic-bezier(0.33, 1, 0.68, 1);
+  --motion-fast: 200ms;
+  --motion-med: 360ms;
+  --motion-slow: 520ms;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+/* Soft theme / surface blending (no layout thrash). */
+body,
+.bg,
+.sheet,
+.row,
+.user-card,
+.search-bar,
+.nav-btn,
+.btn,
+.btn-ghost,
+.theme-toggle,
+.panel,
+.account-box,
+.profile-banner,
+.app-nav,
+.login-wrap,
+.se-chat-sheet,
+.se-chat-modal {
+  transition:
+    background-color var(--motion-fast) var(--motion-ease-soft),
+    color var(--motion-fast) var(--motion-ease-soft),
+    border-color var(--motion-fast) var(--motion-ease-soft),
+    box-shadow var(--motion-fast) var(--motion-ease-soft),
+    opacity var(--motion-fast) var(--motion-ease-soft);
 }
 
 @keyframes se-fade-up {
-  from { opacity: 0; transform: translate3d(0, 14px, 0); }
+  from { opacity: 0; transform: translate3d(0, 12px, 0); }
   to { opacity: 1; transform: translate3d(0, 0, 0); }
 }
 
@@ -17,18 +49,18 @@
 }
 
 @keyframes se-scale-in {
-  from { opacity: 0; transform: translate3d(0, 10px, 0) scale(0.98); }
+  from { opacity: 0; transform: translate3d(0, 8px, 0) scale(0.985); }
   to { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
 }
 
 @keyframes se-sheet-up {
-  from { opacity: 0; transform: translate3d(0, 24px, 0); }
-  to { opacity: 1; transform: translate3d(0, 0, 0); }
+  from { opacity: 0; transform: translate3d(0, 18px, 0) scale(0.985); }
+  to { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
 }
 
 @keyframes se-soft-pulse {
   0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.015); }
+  50% { transform: scale(1.012); }
 }
 
 .se-page-enter,
@@ -40,39 +72,39 @@
 .users-wrap > *,
 .files-wrap > .app-nav,
 .files .section-head {
-  animation: se-fade-up var(--motion-med) var(--motion-ease) both;
+  animation: se-fade-up var(--motion-med) var(--motion-ease-out) both;
 }
 
 .hero .brand-hero {
-  animation: se-fade-up var(--motion-slow) var(--motion-ease) both;
+  animation: se-fade-up var(--motion-slow) var(--motion-ease-out) both;
 }
 
 .hero .hero-line {
-  animation: se-fade-up var(--motion-med) var(--motion-ease) 60ms both;
+  animation: se-fade-up var(--motion-med) var(--motion-ease-out) 70ms both;
 }
 
 .hero .hero-actions {
-  animation: se-fade-up var(--motion-med) var(--motion-ease) 110ms both;
+  animation: se-fade-up var(--motion-med) var(--motion-ease-out) 130ms both;
 }
 
 .hero .hero-auth {
-  animation: se-fade-up var(--motion-med) var(--motion-ease) 160ms both;
+  animation: se-fade-up var(--motion-med) var(--motion-ease-out) 180ms both;
 }
 
 .login-wrap {
-  animation: se-scale-in var(--motion-med) var(--motion-ease) both;
+  animation: se-scale-in var(--motion-med) var(--motion-ease-out) both;
 }
 
 .login-wrap h1,
 .login-wrap .sub,
 .login-wrap .login-form,
 .login-wrap .auth-switch {
-  animation: se-fade-up var(--motion-med) var(--motion-ease) both;
+  animation: se-fade-up var(--motion-med) var(--motion-ease-out) both;
 }
 
-.login-wrap .sub { animation-delay: 40ms; }
-.login-wrap .login-form { animation-delay: 80ms; }
-.login-wrap .auth-switch { animation-delay: 120ms; }
+.login-wrap .sub { animation-delay: 50ms; }
+.login-wrap .login-form { animation-delay: 90ms; }
+.login-wrap .auth-switch { animation-delay: 130ms; }
 
 .login-back {
   animation: se-fade-in var(--motion-fast) var(--motion-ease) both;
@@ -86,18 +118,25 @@
 .account-stack > .account-box:nth-child(2) { animation-delay: 100ms; }
 
 .files-view.is-fast-in .files-wrap {
-  animation: se-fade-up var(--motion-med) var(--motion-ease) both;
+  animation: se-fade-up var(--motion-med) var(--motion-ease-out) both;
 }
 
 .files.is-switching {
-  opacity: 0.55;
-  transform: translate3d(0, 6px, 0);
-  transition: opacity var(--motion-fast) var(--motion-ease), transform var(--motion-fast) var(--motion-ease);
+  opacity: 0.5;
+  transform: translate3d(0, 4px, 0);
+  transition:
+    opacity var(--motion-med) var(--motion-ease),
+    transform var(--motion-med) var(--motion-ease);
 }
 
 .user-card {
   opacity: 0;
-  animation: se-fade-up 280ms var(--motion-ease) both;
+  animation: se-fade-up 300ms var(--motion-ease-out) both;
+  transition:
+    transform var(--motion-fast) var(--motion-ease),
+    border-color var(--motion-fast) var(--motion-ease-soft),
+    background-color var(--motion-fast) var(--motion-ease-soft),
+    box-shadow var(--motion-fast) var(--motion-ease-soft);
 }
 
 .user-card:nth-child(1) { animation-delay: 20ms; }
@@ -110,7 +149,6 @@
 
 .user-card:hover {
   transform: translate3d(0, -2px, 0);
-  transition: transform var(--motion-fast) var(--motion-ease), border-color var(--motion-fast) ease, background var(--motion-fast) ease;
 }
 
 .user-card.is-opening {
@@ -118,23 +156,34 @@
 }
 
 .profile-banner.is-in {
-  animation: se-fade-up 300ms var(--motion-ease) both;
+  animation: se-fade-up 320ms var(--motion-ease-out) both;
 }
 
-.list.is-entering .row {
+.list.is-entering .row,
+.grid.is-entering .row {
   opacity: 0;
-  animation: se-fade-up 280ms var(--motion-ease) both;
+  animation: se-fade-up 300ms var(--motion-ease-out) both;
 }
 
-.list.is-entering .row:nth-child(1) { animation-delay: 30ms; }
-.list.is-entering .row:nth-child(2) { animation-delay: 70ms; }
-.list.is-entering .row:nth-child(3) { animation-delay: 110ms; }
-.list.is-entering .row:nth-child(4) { animation-delay: 150ms; }
-.list.is-entering .row:nth-child(5) { animation-delay: 180ms; }
-.list.is-entering .row:nth-child(6) { animation-delay: 210ms; }
+.list.is-entering .row:nth-child(1),
+.grid.is-entering .row:nth-child(1) { animation-delay: 30ms; }
+.list.is-entering .row:nth-child(2),
+.grid.is-entering .row:nth-child(2) { animation-delay: 70ms; }
+.list.is-entering .row:nth-child(3),
+.grid.is-entering .row:nth-child(3) { animation-delay: 110ms; }
+.list.is-entering .row:nth-child(4),
+.grid.is-entering .row:nth-child(4) { animation-delay: 150ms; }
+.list.is-entering .row:nth-child(5),
+.grid.is-entering .row:nth-child(5) { animation-delay: 180ms; }
+.list.is-entering .row:nth-child(6),
+.grid.is-entering .row:nth-child(6) { animation-delay: 210ms; }
 
 .row {
-  transition: transform var(--motion-fast) var(--motion-ease), border-color var(--motion-fast) ease, background var(--motion-fast) ease;
+  transition:
+    transform var(--motion-fast) var(--motion-ease),
+    border-color var(--motion-fast) var(--motion-ease-soft),
+    background-color var(--motion-fast) var(--motion-ease-soft),
+    box-shadow var(--motion-fast) var(--motion-ease-soft);
 }
 
 .row:hover {
@@ -142,55 +191,104 @@
 }
 
 .modal:not([hidden]) {
-  animation: se-fade-in var(--motion-fast) ease both;
+  animation: se-fade-in var(--motion-med) var(--motion-ease) both;
 }
 
 .modal:not([hidden]) .sheet {
-  animation: se-sheet-up var(--motion-med) var(--motion-ease) both;
+  animation: se-sheet-up var(--motion-med) var(--motion-ease-out) both;
 }
 
 .btn,
 .nav-btn,
 .search-submit,
-.login-form button[type="submit"] {
-  transition: transform var(--motion-fast) var(--motion-ease), background var(--motion-fast) ease, box-shadow var(--motion-fast) ease, border-color var(--motion-fast) ease;
+.login-form button[type="submit"],
+[data-se-logout],
+[data-se-theme] {
+  transition:
+    transform var(--motion-fast) var(--motion-ease),
+    background-color var(--motion-fast) var(--motion-ease-soft),
+    color var(--motion-fast) var(--motion-ease-soft),
+    box-shadow var(--motion-fast) var(--motion-ease-soft),
+    border-color var(--motion-fast) var(--motion-ease-soft),
+    opacity var(--motion-fast) var(--motion-ease-soft);
 }
 
 .btn:hover,
 .nav-btn:hover,
 .search-submit:hover,
-.login-form button[type="submit"]:hover {
+.login-form button[type="submit"]:hover,
+[data-se-theme]:hover {
   transform: translate3d(0, -1px, 0);
 }
 
 .btn:active,
 .nav-btn:active,
 .search-submit:active,
-.login-form button[type="submit"]:active {
-  transform: translate3d(0, 0, 0) scale(0.98);
+.login-form button[type="submit"]:active,
+[data-se-logout]:active,
+[data-se-theme]:active {
+  transform: translate3d(0, 0, 0) scale(0.985);
+  transition-duration: 90ms;
 }
 
 .theme-toggle {
-  transition: transform var(--motion-fast) var(--motion-ease), background var(--motion-fast) ease, color var(--motion-fast) ease;
+  transition:
+    transform var(--motion-fast) var(--motion-ease),
+    background-color var(--motion-fast) var(--motion-ease-soft),
+    color var(--motion-fast) var(--motion-ease-soft),
+    border-color var(--motion-fast) var(--motion-ease-soft);
 }
 
 .theme-toggle:hover {
   transform: translate3d(0, -1px, 0);
 }
 
+input,
+textarea,
+select,
+.search-bar input[type="search"] {
+  transition:
+    border-color var(--motion-fast) var(--motion-ease-soft),
+    box-shadow var(--motion-fast) var(--motion-ease-soft),
+    background-color var(--motion-fast) var(--motion-ease-soft),
+    color var(--motion-fast) var(--motion-ease-soft);
+}
+
+.search-bar {
+  transition:
+    border-color var(--motion-fast) var(--motion-ease-soft),
+    box-shadow var(--motion-med) var(--motion-ease),
+    background-color var(--motion-fast) var(--motion-ease-soft);
+}
+
 /* View crossfade helpers used by JS */
 .se-view-out {
   opacity: 0;
-  transform: translate3d(0, 8px, 0);
-  transition: opacity var(--motion-fast) var(--motion-ease), transform var(--motion-fast) var(--motion-ease);
+  transform: translate3d(0, 6px, 0);
+  transition:
+    opacity var(--motion-med) var(--motion-ease),
+    transform var(--motion-med) var(--motion-ease);
   pointer-events: none;
 }
 
 .se-view-in {
-  animation: se-fade-up var(--motion-med) var(--motion-ease) both;
+  animation: se-fade-up var(--motion-med) var(--motion-ease-out) both;
+}
+
+/* Chat popup — keep centered, soften open */
+.se-chat-modal:not([hidden]) {
+  animation: se-fade-in 200ms var(--motion-ease) both;
+}
+
+.se-chat-modal:not([hidden]) .se-chat-sheet {
+  animation: se-sheet-up 320ms var(--motion-ease-out) both;
 }
 
 @media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
   *,
   *::before,
   *::after {
