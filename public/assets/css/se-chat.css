@@ -18,10 +18,7 @@
   place-items: center !important;
   padding: 1rem !important;
   margin: 0 !important;
-  background: rgba(10, 10, 12, 0.55);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
-  animation: se-chat-fade 160ms ease both;
+  background: rgba(10, 10, 12, 0.62);
   overflow: hidden;
 }
 

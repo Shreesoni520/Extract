@@ -101,13 +101,6 @@ body.view-files > .theme-toggle {
   border-radius: 999px;
   background: var(--ink);
   opacity: 0.88;
-  transform-origin: left center;
-  animation: se-brand-line 700ms cubic-bezier(0.22, 1, 0.36, 1) 180ms both;
-}
-
-@keyframes se-brand-line {
-  from { transform: scaleX(0); opacity: 0; }
-  to { transform: scaleX(1); opacity: 0.88; }
 }
 
 .hero-line {
@@ -134,10 +127,7 @@ body.view-files > .theme-toggle {
 }
 
 body.view-landing .bg {
-  background:
-    radial-gradient(1000px 520px at 85% -10%, rgba(17, 17, 17, 0.06), transparent 58%),
-    radial-gradient(780px 460px at -5% 110%, rgba(17, 17, 17, 0.045), transparent 55%),
-    linear-gradient(165deg, #fbfbfc 0%, #f3f4f6 48%, #eceef1 100%);
+  background: linear-gradient(180deg, #fafafa 0%, #f2f3f5 100%);
 }
 
 .hero-auth {
@@ -1248,10 +1238,7 @@ a.nav-btn-dark:hover {
 }
 
 [data-theme="dark"] body.view-landing .bg {
-  background:
-    radial-gradient(1100px 560px at 88% -8%, rgba(255, 255, 255, 0.07), transparent 56%),
-    radial-gradient(820px 480px at -8% 108%, rgba(255, 255, 255, 0.035), transparent 52%),
-    linear-gradient(168deg, #050505 0%, #000000 42%, #0a0a0a 100%);
+  background: #000;
 }
 
 [data-theme="dark"] .brand-hero::after {
