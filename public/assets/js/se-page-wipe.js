@@ -1,14 +1,15 @@
 /**
- * Full-screen black wipe — bottom → top.
- * Cover: black rises from the bottom.
- * Reveal: black keeps going up and lifts away.
- * Plays on link navigations, in-app swaps, and every page load/reload.
+ * Smooth black wipe — sliding panel bottom → top.
+ * Cover: panel slides up from below.
+ * Reveal: panel keeps sliding up and off-screen.
+ * Load/reload: one continuous pass (smoother than two hard cuts).
  */
 (function () {
   'use strict';
 
-  const COVER_MS = 400;
-  const REVEAL_MS = 400;
+  const COVER_MS = 520;
+  const REVEAL_MS = 520;
+  const PASS_MS = 900;
   const FLAG = 'se_wipe_pending';
 
   function reducedMotion() {
@@ -34,15 +35,23 @@
     return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
+  function resetVeil(veil) {
+    veil.classList.remove('cover', 'reveal', 'pass', 'is-soft');
+    veil.style.transform = '';
+    veil.style.opacity = '';
+    void veil.offsetWidth;
+  }
+
   async function play(mode) {
     if (reducedMotion()) return;
     const veil = ensureVeil();
-    veil.classList.remove('cover', 'reveal', 'is-soft');
-    void veil.offsetWidth;
+    resetVeil(veil);
     veil.classList.add(mode);
-    await wait(mode === 'cover' ? COVER_MS : REVEAL_MS);
-    if (mode === 'reveal') {
-      veil.classList.remove('cover', 'reveal');
+    const ms = mode === 'pass' ? PASS_MS : (mode === 'cover' ? COVER_MS : REVEAL_MS);
+    await wait(ms);
+    if (mode === 'reveal' || mode === 'pass') {
+      resetVeil(veil);
+      veil.style.transform = 'translate3d(0, 100%, 0)';
     }
   }
 
@@ -54,11 +63,10 @@
     return play('reveal');
   }
 
-  /** Full bottom→top cycle: rise up to cover, then continue up and leave. */
+  /** Continuous bottom→top pass (best for load/reload). */
   async function wipeUp() {
     if (reducedMotion()) return;
-    await cover();
-    await reveal();
+    return play('pass');
   }
 
   async function navigate(url) {
@@ -106,11 +114,25 @@
 
   async function playOnLoad() {
     if (reducedMotion()) return;
+    let fromNav = false;
     try {
+      fromNav = sessionStorage.getItem(FLAG) === '1';
       sessionStorage.removeItem(FLAG);
     } catch (_) {}
-    // Let the page paint once, then run bottom→top wipe on every load/reload.
-    await wait(50);
+
+    // Coming from another page: already covered — just lift away smoothly.
+    if (fromNav) {
+      const veil = ensureVeil();
+      resetVeil(veil);
+      veil.style.transform = 'translate3d(0, 0, 0)';
+      await wait(20);
+      veil.style.transform = '';
+      await reveal();
+      return;
+    }
+
+    // Fresh load / reload: one continuous up-pass.
+    await wait(30);
     await wipeUp();
   }
 

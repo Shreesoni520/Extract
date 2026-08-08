@@ -6,44 +6,56 @@
   --motion-fast: 200ms;
   --motion-med: 360ms;
   --motion-slow: 520ms;
-  --wipe-ease: cubic-bezier(0.65, 0, 0.35, 1);
-  --wipe-ms: 380ms;
+  --wipe-ease: cubic-bezier(0.76, 0, 0.24, 1);
+  --wipe-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --wipe-ms: 520ms;
+  --wipe-pass-ms: 900ms;
 }
 
-/* Black wipe — always bottom → top.
-   Cover: grows upward from the bottom.
-   Reveal: exits upward (keeps moving up and away). */
+/* Black wipe — sliding panel bottom → top (smoother than scale). */
 .page-veil {
   position: fixed;
   inset: 0;
   z-index: 100000;
   pointer-events: none;
   background: #000000;
-  transform: scaleY(0);
-  transform-origin: bottom center;
-  opacity: 0;
+  transform: translate3d(0, 100%, 0);
+  opacity: 1;
+  will-change: transform;
+  backface-visibility: hidden;
 }
 
 .page-veil.cover {
   pointer-events: auto;
-  transform-origin: bottom center;
   animation: se-veil-cover var(--wipe-ms) var(--wipe-ease) forwards;
 }
 
 .page-veil.reveal {
   pointer-events: none;
-  transform-origin: top center;
-  animation: se-veil-reveal var(--wipe-ms) var(--wipe-ease) forwards;
+  animation: se-veil-reveal var(--wipe-ms) var(--wipe-ease-out) forwards;
+}
+
+.page-veil.pass {
+  pointer-events: auto;
+  animation: se-veil-pass var(--wipe-pass-ms) var(--wipe-ease) forwards;
 }
 
 @keyframes se-veil-cover {
-  from { transform: scaleY(0); opacity: 1; }
-  to { transform: scaleY(1); opacity: 1; }
+  from { transform: translate3d(0, 100%, 0); }
+  to { transform: translate3d(0, 0, 0); }
 }
 
 @keyframes se-veil-reveal {
-  from { transform: scaleY(1); opacity: 1; }
-  to { transform: scaleY(0); opacity: 1; }
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(0, -100%, 0); }
+}
+
+/* One continuous up-pass for load/reload */
+@keyframes se-veil-pass {
+  0% { transform: translate3d(0, 100%, 0); }
+  42% { transform: translate3d(0, 0, 0); }
+  58% { transform: translate3d(0, 0, 0); }
+  100% { transform: translate3d(0, -100%, 0); }
 }
 
 html {
