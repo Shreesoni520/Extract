@@ -18,8 +18,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@500;600;700&family=Sora:wght@700&display=swap" rel="stylesheet" media="print" onload="this.media='all'" />
   <noscript><link href="https://fonts.googleapis.com/css2?family=Figtree:wght@500;600;700&family=Sora:wght@700&display=swap" rel="stylesheet" /></noscript>
-  <link rel="stylesheet" href="/assets/css/motion.css?v=8" />
-  <link rel="stylesheet" href="/assets/css/public.css?v=53" />
+  <link rel="stylesheet" href="/assets/css/motion.css?v=7" />
+  <link rel="stylesheet" href="/assets/css/public.css?v=52" />
   <link rel="stylesheet" href="/assets/css/se-chat.css?v=8" />
 <script>
 (function () {
@@ -46,45 +46,6 @@
           <a class="btn btn-ghost" href="/app/register.html">Sign up</a>
         </div>
       </div>
-      <script>
-      (function () {
-        // Paint logged-in hero immediately from session hint — no guest→welcome text flash.
-        function esc(s) {
-          return String(s || '').replace(/[&<>"']/g, function (c) {
-            return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c];
-          });
-        }
-        function paintFromHint() {
-          try {
-            var raw = sessionStorage.getItem('se_user_hint');
-            if (!raw) return false;
-            var u = JSON.parse(raw);
-            if (!u || !u.username) return false;
-            var el = document.getElementById('heroContent');
-            if (!el) return false;
-            var name = String(u.username);
-            var key = 'in:' + name.toLowerCase();
-            if (el.getAttribute('data-se-hero') === key) return true;
-            el.setAttribute('data-se-hero', key);
-            el.innerHTML =
-              '<p class="hero-line">Private file sharing for people you trust. Find people, open files, or upload something new.</p>' +
-              '<div class="hero-actions">' +
-              '<button class="btn" id="browseBtn" type="button">Find people</button>' +
-              '<a class="btn btn-ghost" href="/app/index.html">Upload files</a>' +
-              '</div>' +
-              '<p class="hero-auth"><span class="hero-user">@' + esc(name) + '</span> &middot; ' +
-              '<a href="/app/account.html">Account</a> &middot; ' +
-              '<button type="button" class="linkish" id="logoutLink" data-se-logout="1">Logout</button></p>';
-            document.body.setAttribute('data-logged-in', '1');
-            return true;
-          } catch (e) {
-            return false;
-          }
-        }
-        window.SE_paintHeroFromHint = paintFromHint;
-        paintFromHint();
-      })();
-      </script>
     </div>
   </section>
 
@@ -93,7 +54,7 @@
   <script src="/assets/js/se-store.js?v=10"></script>
   <script src="/assets/js/se-api.js?v=1"></script>
   <script src="/assets/js/se-auth.js?v=14"></script>
-  <script src="/assets/js/se-home.js?v=17"></script>
+  <script src="/assets/js/se-home.js?v=16"></script>
   <script src="/assets/js/se-chat.js?v=4"></script>
   <script src="/assets/js/public.js?v=45" defer></script>
 <script>
