@@ -1,12 +1,12 @@
-/* Light, fast motion — opacity/transform only (cheap, no layout thrash). */
+/* Light, fast motion — avoid animating colors/shadows on large surfaces. */
 :root {
   --motion-ease: cubic-bezier(0.22, 1, 0.36, 1);
-  --motion-fast: 160ms;
-  --motion-med: 280ms;
+  --motion-fast: 140ms;
+  --motion-med: 220ms;
 }
 
 @keyframes se-fade-up {
-  from { opacity: 0; transform: translate3d(0, 10px, 0); }
+  from { opacity: 0; transform: translate3d(0, 8px, 0); }
   to { opacity: 1; transform: translate3d(0, 0, 0); }
 }
 
@@ -20,31 +20,9 @@
   to { opacity: 1; transform: translate3d(0, 0, 0); }
 }
 
-@keyframes se-rule-in {
-  from { opacity: 0; transform: scaleX(0); }
-  to { opacity: 0.88; transform: scaleX(1); }
-}
-
-/* Staggered home entrance — content is painted before first paint, so no flicker. */
+/* Brand only — don't animate hero text/actions (they can be swapped after login). */
 .hero .brand-hero {
   animation: se-fade-up var(--motion-med) var(--motion-ease) both;
-}
-
-.hero .brand-hero::after {
-  transform-origin: left center;
-  animation: se-rule-in 340ms var(--motion-ease) 70ms both;
-}
-
-.hero .hero-line {
-  animation: se-fade-up var(--motion-med) var(--motion-ease) 70ms both;
-}
-
-.hero .hero-actions {
-  animation: se-fade-up var(--motion-med) var(--motion-ease) 120ms both;
-}
-
-.hero .hero-auth {
-  animation: se-fade-up var(--motion-med) var(--motion-ease) 170ms both;
 }
 
 .login-wrap {
@@ -52,7 +30,7 @@
 }
 
 .files-view.is-fast-in .files-wrap {
-  animation: se-fade-up var(--motion-med) var(--motion-ease) both;
+  animation: se-fade-in var(--motion-fast) var(--motion-ease) both;
 }
 
 .user-card {
@@ -84,7 +62,7 @@
   animation: se-sheet-up var(--motion-med) var(--motion-ease) both;
 }
 
-/* Interactive — transform/opacity (cheap) */
+/* Interactive only — transform/opacity (cheap) */
 .btn,
 .nav-btn,
 .search-submit,
@@ -93,21 +71,7 @@
 [data-se-theme],
 .row,
 .user-card {
-  transition:
-    transform var(--motion-fast) var(--motion-ease),
-    opacity var(--motion-fast) ease,
-    background-color var(--motion-fast) ease,
-    border-color var(--motion-fast) ease,
-    color var(--motion-fast) ease;
-}
-
-.btn:hover,
-.nav-btn:hover,
-.search-submit:hover,
-.login-form button[type="submit"]:hover,
-.theme-toggle:hover,
-[data-se-theme]:hover {
-  transform: translate3d(0, -1px, 0);
+  transition: transform var(--motion-fast) var(--motion-ease), opacity var(--motion-fast) ease;
 }
 
 .btn:active,
@@ -127,15 +91,12 @@
 
 .se-view-out {
   opacity: 0;
-  transform: translate3d(0, -8px, 0);
-  transition:
-    opacity 180ms var(--motion-ease),
-    transform 180ms var(--motion-ease);
+  transition: opacity var(--motion-fast) ease;
   pointer-events: none;
 }
 
 .se-view-in {
-  animation: se-fade-up var(--motion-med) var(--motion-ease) both;
+  animation: se-fade-in var(--motion-fast) var(--motion-ease) both;
 }
 
 @media (prefers-reduced-motion: reduce) {
