@@ -2,7 +2,7 @@ const crypto = require('crypto');
 
 const PASSWORD_TTL_SECONDS = 300;
 const UNLOCK_TTL_SECONDS = 300;
-const PASSWORD_MIN_LENGTH = 8;
+const PASSWORD_MIN_LENGTH = 4;
 // App ceiling. Effective max depends on storage backend (S3/R2 vs Redis).
 const MAX_UPLOAD_BYTES = 5 * 1024 * 1024 * 1024; // 5 GB
 const KV_UPLOAD_MAX_BYTES = 1 * 1024 * 1024 * 1024; // 1 GB via Redis chunks
@@ -49,27 +49,12 @@ function secondsLeft(sqlDatetime) {
 }
 
 function parseUsername(raw) {
-  let user = String(raw || '').toLowerCase().trim();
-  if (!user) return [null, 'Enter a username.'];
-
-  // People sometimes paste an email — this app uses usernames, not emails.
-  if (user.includes('@')) {
-    return [null, 'Use a username, not an email. Pick a unique name like yourname.'];
+  const trimmed = String(raw || '').trim();
+  if (!trimmed) return [null, 'Enter a username.'];
+  if (!/^[a-zA-Z0-9._]{3,20}$/.test(trimmed)) {
+    return [null, 'Username must be 3-20 letters, numbers, dots, or underscores.'];
   }
-
-  // Normalize lookalikes so "John_Doe", "john.doe", "john-doe" collide less sneakily
-  // only for trailing junk; keep dots/underscores as distinct names otherwise.
-  user = user.replace(/^\.+|\.+$/g, '');
-
-  if (user.length < 3) return [null, 'Username must be at least 3 characters.'];
-  if (user.length > 32) return [null, 'Username must be 32 characters or fewer.'];
-  if (!/^[a-z0-9][a-z0-9._-]{2,31}$/.test(user)) {
-    return [null, 'Use 3–32 characters: lowercase letters, numbers, and you can use dots, underscores, or hyphens. Must start with a letter or number.'];
-  }
-  if (/(\.\.|__|--)/.test(user)) {
-    return [null, 'Username cannot use repeated dots, underscores, or hyphens.'];
-  }
-  return [user, null];
+  return [trimmed.toLowerCase(), null];
 }
 
 function usernameKey(raw) {

@@ -16,8 +16,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Sora:wght@500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/assets/css/motion.css?v=7" />
-  <link rel="stylesheet" href="/assets/css/app.css?v=23" />
+  <link rel="stylesheet" href="/assets/css/motion.css?v=8" />
+  <link rel="stylesheet" href="/assets/css/app.css?v=24" />
 <script>
 (function () {
   try {
@@ -31,32 +31,31 @@
 </script>
 </head>
 <body class="login-body">
-  <a class="nav-btn login-back" href="/">&larr; Back</a>
   <div class="login-wrap">
+    <a class="back-link" href="/">&larr; Back</a>
     <h1>Sign in</h1>
     <p class="sub">Sign in first to find people and use files.</p>
-    <div id="authAlert"></div>
     <form method="post" class="login-form" autocomplete="off">
       <label>
         <span>Username</span>
-        <input type="text" name="username" required autofocus
+        <input type="text" name="username" id="username" required autofocus
                autocapitalize="off" autocorrect="off" spellcheck="false"
-               placeholder="yourname" />
+               autocomplete="username" />
       </label>
       <label>
         <span>Password</span>
-        <input type="password" name="password" required />
+        <input type="password" name="password" id="password" required autocomplete="current-password" />
       </label>
       <button type="submit">Sign in</button>
     </form>
     <p class="auth-switch">
       New here?
-      <a href="/app/register.html">Sign up</a>
+      <a href="/register">Sign up</a>
     </p>
   </div>
-  <script src="/assets/js/se-store.js?v=10"></script>
+  <script src="/assets/js/se-store.js?v=12"></script>
   <script src="/assets/js/se-api.js?v=1"></script>
-  <script src="/assets/js/se-auth.js?v=14"></script>
+  <script src="/assets/js/se-auth.js?v=15"></script>
 <script>
 (function () {
   if (!document.getElementById('themeToggle')) {

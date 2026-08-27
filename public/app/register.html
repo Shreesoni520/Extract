@@ -16,8 +16,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Sora:wght@500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/assets/css/motion.css?v=7" />
-  <link rel="stylesheet" href="/assets/css/app.css?v=23" />
+  <link rel="stylesheet" href="/assets/css/motion.css?v=8" />
+  <link rel="stylesheet" href="/assets/css/app.css?v=24" />
 <script>
 (function () {
   try {
@@ -31,39 +31,35 @@
 </script>
 </head>
 <body class="login-body">
-  <a class="nav-btn login-back" href="/">&larr; Back</a>
   <div class="login-wrap">
+    <a class="back-link" href="/">&larr; Back</a>
     <h1>Sign up</h1>
-    <p class="sub">Create a unique username. If you already registered, <a href="/app/login.html">sign in</a> instead.</p>
-    <div id="authAlert"></div>
+    <p class="sub">Create a unique username. If you already registered, sign in instead.</p>
     <form method="post" class="login-form" autocomplete="off">
       <label>
         <span>Username</span>
-        <input type="text" name="username" required minlength="3" maxlength="32"
-               pattern="[a-z0-9._-]+" autofocus
+        <input type="text" name="username" id="username" required autofocus
                autocapitalize="off" autocorrect="off" spellcheck="false"
-               autocomplete="username"
-               placeholder="yourname" />
-        <small id="usernameHint" class="field-hint" hidden></small>
+               autocomplete="username" />
       </label>
       <label>
         <span>Password</span>
-        <input type="password" name="password" required minlength="8" />
+        <input type="password" name="password" id="password" required autocomplete="new-password" />
       </label>
       <label>
         <span>Confirm password</span>
-        <input type="password" name="confirm" required minlength="8" />
+        <input type="password" name="confirm" id="confirm" required autocomplete="new-password" />
       </label>
       <button type="submit">Sign up</button>
     </form>
     <p class="auth-switch">
       Already have an account?
-      <a href="/app/login.html">Sign in</a>
+      <a href="/login">Sign in</a>
     </p>
   </div>
-  <script src="/assets/js/se-store.js?v=10"></script>
+  <script src="/assets/js/se-store.js?v=12"></script>
   <script src="/assets/js/se-api.js?v=1"></script>
-  <script src="/assets/js/se-auth.js?v=14"></script>
+  <script src="/assets/js/se-auth.js?v=15"></script>
 <script>
 (function () {
   if (!document.getElementById('themeToggle')) {

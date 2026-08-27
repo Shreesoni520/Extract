@@ -331,7 +331,7 @@ function runRead(db, n, p, sql) {
   }
   if (n.startsWith('select id, username, password_hash, avatar from admins where username')) {
     const u = String(p.u || '').toLowerCase();
-    return db.admins.filter((a) => a.username === u).slice(0, 1);
+    return db.admins.filter((a) => String(a.username || '').toLowerCase() === u).slice(0, 1);
   }
   if (n.startsWith('select id, username, password_hash, avatar from admins where id')) {
     return db.admins.filter((a) => Number(a.id) === Number(p.id)).map((a) => ({

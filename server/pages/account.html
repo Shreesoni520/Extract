@@ -19,7 +19,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Sora:wght@500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/assets/css/motion.css?v=7" />
-  <link rel="stylesheet" href="/assets/css/app.css?v=23" />
+  <link rel="stylesheet" href="/assets/css/app.css?v=24" />
   <link rel="stylesheet" href="/assets/css/account.css?v=1" />
 <script>
 (function () {
@@ -73,23 +73,23 @@
 
         <section class="account-box">
           <h1>Account</h1>
-          <p class="sub">Change your username anytime. Only fill the password fields if you want a new password.</p>
+          <p class="sub">Change your username anytime. Only fill the password fields if you want a new password. Passwords stay on this device.</p>
           <form method="post" class="login-form" autocomplete="off" id="accountForm">
             <input type="hidden" name="action" value="account" />
             <label>
               <span>Username</span>
-              <input type="text" name="new_username" id="usernameInput" required minlength="3" maxlength="32"
-                     pattern="[a-z0-9._-]+" value=""
+              <input type="text" name="new_username" id="usernameInput" required minlength="3" maxlength="20"
+                     pattern="[A-Za-z0-9._]+" value=""
                      autocapitalize="off" autocorrect="off" spellcheck="false" />
             </label>
             <label>
               <span>New password <em>(optional)</em></span>
-              <input type="password" name="new_password" id="newPassword" minlength="8"
+              <input type="password" name="new_password" id="newPassword" minlength="4"
                      autocomplete="new-password" placeholder="Leave blank to keep your current password" />
             </label>
             <label>
               <span>Confirm new password</span>
-              <input type="password" name="confirm_password" id="confirmPassword" minlength="8"
+              <input type="password" name="confirm_password" id="confirmPassword" minlength="4"
                      autocomplete="new-password" placeholder="Repeat the new password" />
             </label>
             <label id="currentPassWrap" hidden>
@@ -105,11 +105,11 @@
       </div>
     </div>
   </div>
-  <script src="/assets/js/se-store.js?v=10"></script>
+  <script src="/assets/js/se-store.js?v=12"></script>
   <script src="/assets/js/se-api.js?v=1"></script>
-  <script src="/assets/js/se-auth.js?v=14"></script>
+  <script src="/assets/js/se-auth.js?v=15"></script>
   <script src="/assets/js/account.js?v=2"></script>
-  <script src="/assets/js/se-account-page.js?v=5"></script>
+  <script src="/assets/js/se-account-page.js?v=6"></script>
 <script src="/assets/js/theme.js?v=3" defer></script>
 </body>
 </html>

@@ -5,7 +5,7 @@
     passwordTtlSeconds: 300,
     unlockTtlSeconds: 300,
     maxUploadBytes: 50 * 1024 * 1024,
-    passwordMinLength: 8,
+    passwordMinLength: 4,
     appName: "Shree's Extractions",
   };
 
@@ -26,6 +26,74 @@
 
   let cachedUser = null;
   let ready = null;
+
+  const USERS_KEY = 'se_users_v1';
+  const SESSION_KEY = 'se_session_v1';
+
+  function usernameKey(username) {
+    return String(username || '').trim().toLowerCase();
+  }
+
+  function isValidUsername(username) {
+    return /^[a-zA-Z0-9._]{3,20}$/.test(String(username || '').trim());
+  }
+
+  function readUsers() {
+    try {
+      const raw = global.localStorage && global.localStorage.getItem(USERS_KEY);
+      return raw ? JSON.parse(raw) : {};
+    } catch (_) {
+      return {};
+    }
+  }
+
+  function writeUsers(users) {
+    try {
+      global.localStorage.setItem(USERS_KEY, JSON.stringify(users));
+    } catch (_) {}
+  }
+
+  function getSessionUsername() {
+    try {
+      return global.localStorage.getItem(SESSION_KEY) || null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  function setSessionUsername(username) {
+    try {
+      if (username) global.localStorage.setItem(SESSION_KEY, username);
+      else global.localStorage.removeItem(SESSION_KEY);
+    } catch (_) {}
+  }
+
+  function getLocalUser(username) {
+    if (!username) return null;
+    const users = readUsers();
+    return users[usernameKey(username)] || null;
+  }
+
+  function saveLocalUser(user) {
+    const users = readUsers();
+    users[usernameKey(user.username)] = user;
+    writeUsers(users);
+    return user;
+  }
+
+  async function hashPassword(password, salt) {
+    const encoded = new TextEncoder().encode(`${salt}:${password}`);
+    const digest = await crypto.subtle.digest('SHA-256', encoded);
+    return Array.from(new Uint8Array(digest))
+      .map((byte) => byte.toString(16).padStart(2, '0'))
+      .join('');
+  }
+
+  function makeSalt() {
+    return Array.from(crypto.getRandomValues(new Uint8Array(16)))
+      .map((byte) => byte.toString(16).padStart(2, '0'))
+      .join('');
+  }
 
   function apiUrl(path) {
     if (path.startsWith('http')) return path;
@@ -93,11 +161,20 @@
     return cachedUser;
   }
 
+  function localAccountFromSession() {
+    const session = getSessionUsername();
+    return session ? getLocalUser(session) : null;
+  }
+
   function adminLoggedIn() {
-    return !!cachedUser;
+    return !!(cachedUser && cachedUser.username && localAccountFromSession());
   }
 
   function readUserHint() {
+    const local = localAccountFromSession();
+    if (local && local.username) {
+      return { id: (cachedUser && cachedUser.id) || 0, username: local.username };
+    }
     try {
       const raw = sessionStorage.getItem('se_user_hint');
       return raw ? JSON.parse(raw) : null;
@@ -119,19 +196,46 @@
     } catch (_) {}
   }
 
-  async function refreshMe() {
-    const { res, data } = await api('/api/auth/me');
+  function paintLocalUser(account, extra) {
+    cachedUser = {
+      id: extra && extra.id ? Number(extra.id) : ((cachedUser && cachedUser.id) || 0),
+      username: account.username,
+      avatar: extra && extra.avatar ? extra.avatar : ((cachedUser && cachedUser.avatar) || null),
+    };
+    setSessionUsername(account.username);
+    writeUserHint(cachedUser);
+    return cachedUser;
+  }
+
+  async function ensureServerSession(username) {
+    const call = api('/api/auth/local-session', {
+      method: 'POST',
+      body: { username },
+    });
+    const timeout = new Promise((resolve) => setTimeout(() => resolve({ data: null }), 4000));
+    const { data } = await Promise.race([call, timeout]);
     if (data && data.ok && data.user) {
-      cachedUser = {
-        id: data.user.id,
-        username: data.user.username,
-        avatar: data.user.avatar || null,
-      };
-      writeUserHint(cachedUser);
-    } else {
+      const local = getLocalUser(username) || { username: data.user.username };
+      paintLocalUser(local, data.user);
+      return cachedUser;
+    }
+    return cachedUser;
+  }
+
+  async function refreshMe() {
+    const local = localAccountFromSession();
+    if (!local) {
       cachedUser = null;
       writeUserHint(null);
+      try {
+        global.dispatchEvent(new CustomEvent('se-auth-updated', { detail: null }));
+      } catch (_) {}
+      return null;
     }
+    paintLocalUser(local, cachedUser);
+    try {
+      await ensureServerSession(local.username);
+    } catch (_) {}
     try {
       global.dispatchEvent(new CustomEvent('se-auth-updated', { detail: cachedUser }));
     } catch (_) {}
@@ -144,25 +248,16 @@
       ready = null;
       cachedUser = null;
     }
-    // Optimistic session from last visit so UI can render instantly.
-    if (!cachedUser) {
-      const hint = readUserHint();
-      if (hint && hint.username) {
-        cachedUser = {
-          id: Number(hint.id) || 0,
-          username: String(hint.username),
-          avatar: null,
-        };
-      }
+    const local = localAccountFromSession();
+    if (local) {
+      paintLocalUser(local, cachedUser);
+    } else {
+      cachedUser = null;
+      writeUserHint(null);
     }
     if (!ready) {
-      ready = refreshMe().catch(() => {
-        cachedUser = null;
-        writeUserHint(null);
-        return null;
-      });
+      ready = refreshMe().catch(() => cachedUser);
     }
-    // Don't block first paint when we already know who you are.
     if (cachedUser && cachedUser.username && !force) {
       return cachedUser;
     }
@@ -175,54 +270,107 @@
   }
 
   async function register(username, password, confirm) {
-    const { res, data } = await api('/api/auth/register', {
-      method: 'POST',
-      body: { username, password, confirm },
-    });
-    if (data && data.ok) await refreshMe();
-    if (data) {
-      if (!data.ok && res && res.status === 409) data.code = data.code || 'USERNAME_TAKEN';
-      return data;
+    const trimmed = String(username || '').trim();
+    if (!isValidUsername(trimmed)) {
+      return { ok: false, error: 'Username must be 3-20 letters, numbers, dots, or underscores.' };
     }
-    return { ok: false, error: 'Registration failed.' };
+    if (String(password || '').length < 4) {
+      return { ok: false, error: 'Password must be at least 4 characters.' };
+    }
+    if (password !== confirm) {
+      return { ok: false, error: 'Passwords do not match.' };
+    }
+    if (getLocalUser(trimmed)) {
+      return { ok: false, error: 'That username is taken.', code: 'USERNAME_TAKEN' };
+    }
+    const salt = makeSalt();
+    const passwordHash = await hashPassword(String(password), salt);
+    const account = {
+      username: trimmed,
+      passwordHash,
+      salt,
+      createdAt: Date.now(),
+    };
+    saveLocalUser(account);
+    paintLocalUser(account);
+    try { await ensureServerSession(account.username); } catch (_) {}
+    try {
+      global.dispatchEvent(new CustomEvent('se-auth-updated', { detail: cachedUser }));
+    } catch (_) {}
+    return { ok: true, user: cachedUser };
   }
 
   async function login(username, password) {
-    const { data } = await api('/api/auth/login', {
-      method: 'POST',
-      body: { username, password },
-    });
-    if (data && data.ok) await refreshMe();
-    return data || { ok: false, error: 'Login failed.' };
+    const existing = getLocalUser(username);
+    if (!existing) return { ok: false, error: 'No account with that username.' };
+    const hash = await hashPassword(String(password || ''), existing.salt);
+    if (hash !== existing.passwordHash) return { ok: false, error: 'Wrong password.' };
+    paintLocalUser(existing);
+    try { await ensureServerSession(existing.username); } catch (_) {}
+    try {
+      global.dispatchEvent(new CustomEvent('se-auth-updated', { detail: cachedUser }));
+    } catch (_) {}
+    return { ok: true, user: cachedUser };
   }
 
   async function logout() {
+    setSessionUsername(null);
     cachedUser = null;
     writeUserHint(null);
     ready = null;
+    try { sessionStorage.removeItem('se_user_hint'); } catch (_) {}
     try {
       await api('/api/auth/logout', {
         method: 'POST',
         body: {},
         headers: { 'Cache-Control': 'no-store' },
       });
-    } catch (_) {
-      // Still clear local session even if the network call fails.
-      try {
-        await fetch(apiUrl('/api/auth/logout'), {
-          method: 'POST',
-          credentials: 'include',
-          headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-          body: '{}',
-          cache: 'no-store',
-        });
-      } catch (_) {}
-    }
+    } catch (_) {}
     cachedUser = null;
     writeUserHint(null);
     try {
       global.dispatchEvent(new CustomEvent('se-auth-updated', { detail: null }));
     } catch (_) {}
+  }
+
+  async function changeLocalPassword(currentPassword, newPassword, confirmPassword) {
+    const account = localAccountFromSession();
+    if (!account) return { ok: false, error: 'Not logged in.' };
+    if (String(newPassword || '').length < 4) {
+      return { ok: false, error: 'Password must be at least 4 characters.' };
+    }
+    if (newPassword !== confirmPassword) {
+      return { ok: false, error: 'Passwords do not match.' };
+    }
+    const currentHash = await hashPassword(String(currentPassword || ''), account.salt);
+    if (currentHash !== account.passwordHash) {
+      return { ok: false, error: 'Wrong password.', code: 'BAD_CURRENT_PASSWORD' };
+    }
+    const salt = makeSalt();
+    account.salt = salt;
+    account.passwordHash = await hashPassword(String(newPassword), salt);
+    saveLocalUser(account);
+    return { ok: true, message: 'Password updated. Use the new password next time you sign in.' };
+  }
+
+  async function renameLocalAccount(newUsername) {
+    const account = localAccountFromSession();
+    if (!account) return { ok: false, error: 'Not logged in.' };
+    const trimmed = String(newUsername || '').trim();
+    if (!isValidUsername(trimmed)) {
+      return { ok: false, error: 'Username must be 3-20 letters, numbers, dots, or underscores.' };
+    }
+    const other = getLocalUser(trimmed);
+    if (other && usernameKey(other.username) !== usernameKey(account.username)) {
+      return { ok: false, error: 'That username is taken.', code: 'USERNAME_TAKEN' };
+    }
+    const users = readUsers();
+    delete users[usernameKey(account.username)];
+    account.username = trimmed;
+    users[usernameKey(trimmed)] = account;
+    writeUsers(users);
+    paintLocalUser(account, cachedUser);
+    return { ok: true, username: trimmed };
   }
 
   async function searchUsers(q) {
@@ -598,9 +746,13 @@
     register,
     login,
     logout,
+    changeLocalPassword,
+    renameLocalAccount,
     adminLoggedIn,
     getCurrentUser,
     readUserHint,
+    getSessionUsername,
+    isValidUsername,
     whenReady,
     searchUsers,
     listItemsForUser,

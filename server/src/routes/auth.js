@@ -46,6 +46,47 @@ router.get('/check-username', async (req, res) => {
   }
 });
 
+router.post('/local-session', async (req, res) => {
+  try {
+    const { username } = req.body || {};
+    const [normalized, userError] = parseUsername(username);
+    if (userError) return res.status(400).json({ ok: false, error: userError });
+    let rows = await query(
+      'SELECT id, username, password_hash, avatar FROM admins WHERE username = :u LIMIT 1',
+      { u: normalized },
+    );
+    let user = rows[0];
+    if (!user) {
+      try {
+        const result = await query(
+          'INSERT INTO admins (username, password_hash) VALUES (:username, :hash)',
+          { username: normalized, hash: 'local' },
+        );
+        user = { id: result.insertId, username: normalized, avatar: null };
+      } catch (insertErr) {
+        if (insertErr && (insertErr.code === 'USERNAME_TAKEN' || /USERNAME_TAKEN/i.test(insertErr.message || ''))) {
+          rows = await query(
+            'SELECT id, username, password_hash, avatar FROM admins WHERE username = :u LIMIT 1',
+            { u: normalized },
+          );
+          user = rows[0];
+        } else {
+          throw insertErr;
+        }
+      }
+    }
+    if (!user) return res.status(500).json({ ok: false, error: 'Could not start session.' });
+    setSessionUser(req, res, user);
+    return res.json({
+      ok: true,
+      user: { id: user.id, username: user.username, avatar: user.avatar || null },
+    });
+  } catch (err) {
+    console.error('local-session', err);
+    return res.status(500).json({ ok: false, error: 'Could not start session.' });
+  }
+});
+
 router.post('/register', async (req, res) => {
   try {
     const { username, password, confirm } = req.body || {};

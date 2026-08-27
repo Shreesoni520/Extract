@@ -70,6 +70,31 @@ function createApp() {
   app.use('/api', filesRoutes);
   app.use('/api', apiRoutes);
 
+  app.get(['/login', '/login.html'], (_req, res) => {
+    return res.sendFile(path.join(PUBLIC_ROOT, 'app', 'login.html'));
+  });
+  app.get(['/register', '/register.html'], (_req, res) => {
+    return res.sendFile(path.join(PUBLIC_ROOT, 'app', 'register.html'));
+  });
+  app.get([
+    '/app/login.html',
+    '/Extract/app/login.html',
+    '/Extract/login',
+    '/Extract/login.html',
+  ], (req, res) => {
+    const qs = req.url.includes('?') ? req.url.slice(req.url.indexOf('?')) : '';
+    return res.redirect(302, `/login${qs}`);
+  });
+  app.get([
+    '/app/register.html',
+    '/Extract/app/register.html',
+    '/Extract/register',
+    '/Extract/register.html',
+  ], (req, res) => {
+    const qs = req.url.includes('?') ? req.url.slice(req.url.indexOf('?')) : '';
+    return res.redirect(302, `/register${qs}`);
+  });
+
   // Protected app pages — require a real signed-in session (not public CDN HTML).
   app.get('/app/index.html', requirePageAuth, sendProtectedPage('index.html'));
   app.get('/app/account.html', requirePageAuth, sendProtectedPage('account.html'));
@@ -87,11 +112,6 @@ function createApp() {
   app.get(['/Extract', '/Extract/', '/Extract/index.html', '/home', '/home.html'], (_req, res) => {
     res.redirect(302, '/');
   });
-  app.get(['/Extract/app/login.html', '/Extract/app/register.html'], (req, res) => {
-    const dest = req.path.includes('register') ? '/app/register.html' : '/app/login.html';
-    const qs = req.url.includes('?') ? req.url.slice(req.url.indexOf('?')) : '';
-    return res.redirect(302, `${dest}${qs}`);
-  });
 
   app.use((req, res, next) => {
     if (req.method !== 'GET' && req.method !== 'HEAD') return next();
@@ -105,6 +125,10 @@ function createApp() {
       '/index.html',
       '/download.html',
       '/favicon.ico',
+      '/login',
+      '/register',
+      '/login.html',
+      '/register.html',
       '/app/login.html',
       '/app/register.html',
       '/app/index.html',

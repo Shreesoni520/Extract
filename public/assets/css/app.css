@@ -86,6 +86,18 @@ body {
   animation: fade-up 0.45s ease both;
 }
 
+.login-wrap .back-link {
+  display: inline-block;
+  margin: 0 0 0.65rem;
+  color: var(--muted);
+  font-size: 0.9rem;
+  text-decoration: none;
+}
+
+.login-wrap .back-link:hover {
+  color: var(--ink);
+}
+
 .login-wrap h1,
 .admin-top h1,
 .panel h2 {
@@ -1220,18 +1232,10 @@ a.nav-btn-dark {
   letter-spacing: 0;
 }
 
-.login-back {
-  position: fixed;
-  top: max(1.15rem, env(safe-area-inset-top, 0px));
-  left: max(var(--gutter), env(safe-area-inset-left, 0px));
-  z-index: 5;
-}
-
 @media (max-width: 640px) {
   .login-body {
-    align-content: start;
     padding:
-      calc(4.75rem + env(safe-area-inset-top, 0px))
+      max(1.5rem, env(safe-area-inset-top, 0px))
       max(1rem, env(safe-area-inset-right, 0px))
       max(1.25rem, env(safe-area-inset-bottom, 0px))
       max(1rem, env(safe-area-inset-left, 0px));
@@ -1788,4 +1792,41 @@ a.nav-btn-dark {
   background: #f5f5f5;
   color: #000;
   border-color: #f5f5f5;
+}
+
+.se-toasts {
+  position: fixed;
+  top: max(1rem, env(safe-area-inset-top, 0px));
+  right: max(1rem, env(safe-area-inset-right, 0px));
+  z-index: 9999;
+  display: grid;
+  gap: 0.5rem;
+  pointer-events: none;
+}
+
+.se-toast {
+  pointer-events: auto;
+  min-width: 220px;
+  max-width: min(360px, calc(100vw - 2rem));
+  padding: 0.85rem 1rem;
+  border-radius: 12px;
+  background: #18181b;
+  color: #fafafa;
+  border: 1px solid #27272a;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.28);
+  font-size: 0.9rem;
+  line-height: 1.4;
+  animation: se-fade-up 0.22s ease both;
+}
+
+.se-toast.is-out {
+  opacity: 0;
+  transform: translate3d(0, -6px, 0);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+[data-theme="dark"] .se-toast {
+  background: #f4f4f5;
+  color: #09090b;
+  border-color: #e4e4e7;
 }

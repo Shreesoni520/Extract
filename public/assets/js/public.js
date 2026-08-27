@@ -462,7 +462,7 @@
         cache: 'no-store',
       });
       if (res.status === 401) {
-        window.location.href = '/app/login.html';
+        window.location.href = '/login';
         return null;
       }
       const data = await res.json();
@@ -703,7 +703,7 @@
       });
       const data = await res.json().catch(() => ({}));
       if (res.status === 401) {
-        window.location.href = '/app/login.html';
+        window.location.href = '/login';
         return;
       }
       if (!res.ok || !data.ok) {

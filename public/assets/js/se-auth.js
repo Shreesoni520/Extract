@@ -1,15 +1,6 @@
 (function () {
   'use strict';
 
-  function showAlert(container, text, ok) {
-    if (!container || !text) return;
-    container.innerHTML = `<div class="alert${ok ? ' ok' : ''}">${String(text).replace(/[<>&]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c]))}</div>`;
-  }
-
-  function redirect(path) {
-    window.location.replace(path);
-  }
-
   function rootPath() {
     if (window.SEStore && typeof window.SEStore.root === 'string') {
       return window.SEStore.root;
@@ -24,9 +15,41 @@
   }
 
   function loginUrl(nextPath) {
-    const base = `${rootPath()}/app/login.html`;
+    const base = `${rootPath()}/login`;
     if (!nextPath) return base;
     return `${base}?next=${encodeURIComponent(nextPath)}`;
+  }
+
+  function registerUrl() {
+    return `${rootPath()}/register`;
+  }
+
+  function pathOf() {
+    return window.location.pathname || '/';
+  }
+
+  function isLoginPage() {
+    return /\/login(?:\.html)?$/i.test(pathOf()) || /login\.html/i.test(pathOf());
+  }
+
+  function isRegisterPage() {
+    return /\/register(?:\.html)?$/i.test(pathOf()) || /register\.html/i.test(pathOf());
+  }
+
+  function isAuthPage() {
+    return isLoginPage() || isRegisterPage();
+  }
+
+  function isProtected() {
+    return /\/app\/(index|account|users)\.html/i.test(pathOf());
+  }
+
+  function isHome() {
+    const path = pathOf();
+    return path === '/'
+      || /^\/index\.html$/i.test(path)
+      || /^\/Extract\/?$/i.test(path)
+      || /^\/Extract\/index\.html$/i.test(path);
   }
 
   function safeNextPath() {
@@ -40,8 +63,8 @@
     }
   }
 
-  function currentAppPath() {
-    return `${window.location.pathname}${window.location.search || ''}`;
+  function redirect(path) {
+    window.location.replace(path);
   }
 
   function revealAuthedUi() {
@@ -54,13 +77,39 @@
   }
 
   function unstickAuthGate() {
-    // Never leave the full-page "Checking sign-in…" overlay stuck.
     document.documentElement.classList.remove('auth-pending');
   }
 
   function clearLocalSession() {
     try { sessionStorage.removeItem('se_user_hint'); } catch (_) {}
+    try { localStorage.removeItem('se_session_v1'); } catch (_) {}
     try { localStorage.removeItem('se_user_hint'); } catch (_) {}
+  }
+
+  function ensureToastHost() {
+    let host = document.getElementById('seToasts');
+    if (host) return host;
+    host = document.createElement('div');
+    host.id = 'seToasts';
+    host.className = 'se-toasts';
+    host.setAttribute('aria-live', 'polite');
+    document.body.appendChild(host);
+    return host;
+  }
+
+  function showToast(text) {
+    const message = String(text || '').trim();
+    if (!message) return;
+    const host = ensureToastHost();
+    const el = document.createElement('div');
+    el.className = 'se-toast se-toast-error';
+    el.setAttribute('role', 'status');
+    el.textContent = message;
+    host.appendChild(el);
+    setTimeout(() => {
+      el.classList.add('is-out');
+      setTimeout(() => el.remove(), 220);
+    }, 4200);
   }
 
   async function performLogout() {
@@ -70,15 +119,7 @@
         await window.SEStore.logout();
         return;
       }
-      await fetch('/api/auth/logout', {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-        body: '{}',
-        cache: 'no-store',
-      });
     })();
-    // Never let a hung network call make Logout feel dead.
     await Promise.race([
       logoutCall.catch(() => {}),
       new Promise((resolve) => setTimeout(resolve, 2500)),
@@ -92,7 +133,6 @@
   }
 
   function bindLogoutLinks() {
-    // Event delegation: browse nav is injected after first paint.
     if (document.documentElement.dataset.seLogoutDelegation === '1') return;
     document.documentElement.dataset.seLogoutDelegation = '1';
     document.addEventListener('click', async (e) => {
@@ -116,8 +156,55 @@
     }, true);
   }
 
+  function locallyLoggedIn() {
+    return !!(window.SEStore && window.SEStore.adminLoggedIn && window.SEStore.adminLoggedIn());
+  }
+
+  async function bindAuthForm() {
+    const form = document.querySelector('form.login-form');
+    if (!form) return;
+    const mode = isRegisterPage() ? 'register' : 'login';
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (form.dataset.seBusy === '1') return;
+      form.dataset.seBusy = '1';
+      const btn = form.querySelector('button[type="submit"]');
+      const original = btn ? btn.textContent : '';
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = 'Please wait...';
+      }
+      try {
+        const fd = new FormData(form);
+        const username = String(fd.get('username') || '');
+        const password = String(fd.get('password') || '');
+        const confirm = String(fd.get('confirm') || '');
+        const res = mode === 'register'
+          ? await window.SEStore.register(username, password, confirm)
+          : await window.SEStore.login(username, password);
+        if (res && res.ok) {
+          redirect(safeNextPath() || homeUrl());
+          return;
+        }
+        showToast((res && res.error) || (mode === 'register' ? 'Could not continue' : 'Could not continue'));
+        form.dataset.seBusy = '0';
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = original || (mode === 'register' ? 'Sign up' : 'Sign in');
+        }
+      } catch (err) {
+        showToast((err && err.message) || 'Could not continue');
+        form.dataset.seBusy = '0';
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = original || (mode === 'register' ? 'Sign up' : 'Sign in');
+        }
+      }
+    });
+  }
+
   async function initAuth() {
-    // Failsafe: if auth init hangs, still unlock the UI after a short wait.
     const failsafe = setTimeout(unstickAuthGate, 4000);
     try {
       if (!window.SEStore) {
@@ -125,17 +212,7 @@
         return;
       }
 
-      const isLogin = /login\.html/i.test(window.location.pathname);
-      const isRegister = /register\.html/i.test(window.location.pathname);
-      const isProtected = /\/app\/(index|account|users)\.html/i.test(window.location.pathname);
-      const path = window.location.pathname || '/';
-      const isHome = path === '/'
-        || /^\/index\.html$/i.test(path)
-        || /^\/Extract\/?$/i.test(path)
-        || /^\/Extract\/index\.html$/i.test(path);
-
-      // Landing page: se-home.js owns the single session init + hero paint.
-      if (isHome) {
+      if (isHome()) {
         bindLogoutLinks();
         document.addEventListener('se-home-ready', bindLogoutLinks);
         unstickAuthGate();
@@ -144,129 +221,30 @@
 
       await window.SEStore.init({ force: true });
 
-      // Old links used login.html#logout — handle that without bouncing other pages.
-      if (isLogin && /logout/i.test(window.location.hash || '')) {
+      if (isLoginPage() && /logout/i.test(window.location.hash || '')) {
         await window.SEStore.logout();
         history.replaceState(null, '', loginUrl());
       }
 
-      if (isProtected && !window.SEStore.adminLoggedIn()) {
+      if (isProtected() && !locallyLoggedIn()) {
         unstickAuthGate();
         redirect(homeUrl());
         return;
       }
 
-      if (window.SEStore.adminLoggedIn() && (isLogin || isRegister)) {
+      if (locallyLoggedIn() && isAuthPage()) {
         redirect(homeUrl());
         return;
       }
 
-      if (isProtected && window.SEStore.adminLoggedIn()) {
+      if (isProtected() && locallyLoggedIn()) {
         revealAuthedUi();
       } else {
         unstickAuthGate();
       }
 
-      if (isLogin) {
-        const form = document.querySelector('form.login-form');
-        form?.addEventListener('submit', async (e) => {
-          e.preventDefault();
-          if (form.dataset.seBusy === '1') return;
-          form.dataset.seBusy = '1';
-          const btn = form.querySelector('button[type="submit"]');
-          if (btn) btn.disabled = true;
-          try {
-            const fd = new FormData(form);
-            const res = await window.SEStore.login(fd.get('username'), fd.get('password'));
-            if (res && res.ok) {
-              redirect(safeNextPath() || homeUrl());
-              return;
-            }
-            showAlert(document.getElementById('authAlert'), (res && res.error) || 'Login failed.', false);
-            form.dataset.seBusy = '0';
-            if (btn) btn.disabled = false;
-          } catch (_) {
-            showAlert(document.getElementById('authAlert'), 'Login failed. Please try again.', false);
-            form.dataset.seBusy = '0';
-            if (btn) btn.disabled = false;
-          }
-        });
-      }
-
-      if (isRegister) {
-        const form = document.querySelector('form.login-form');
-        const userInput = form?.querySelector('input[name="username"]');
-        const hint = document.getElementById('usernameHint');
-        let checkTimer = null;
-
-        async function checkUsernameLive() {
-          if (!userInput) return;
-          const raw = String(userInput.value || '').trim();
-          if (!raw || raw.length < 3) {
-            if (hint) {
-              hint.hidden = true;
-              hint.textContent = '';
-              hint.className = 'field-hint';
-            }
-            return;
-          }
-          try {
-            const res = await fetch(`/api/auth/check-username?u=${encodeURIComponent(raw)}`, {
-              credentials: 'same-origin',
-              headers: { Accept: 'application/json' },
-            });
-            const data = await res.json().catch(() => ({}));
-            if (!hint) return;
-            if (data.available) {
-              hint.hidden = false;
-              hint.className = 'field-hint ok';
-              hint.textContent = `@${data.username} is available`;
-            } else {
-              hint.hidden = false;
-              hint.className = 'field-hint bad';
-              hint.textContent = data.error || 'That username is already registered. Sign in instead.';
-            }
-          } catch (_) {
-            if (hint) hint.hidden = true;
-          }
-        }
-
-        userInput?.addEventListener('input', () => {
-          if (checkTimer) clearTimeout(checkTimer);
-          checkTimer = setTimeout(checkUsernameLive, 280);
-        });
-        userInput?.addEventListener('blur', checkUsernameLive);
-
-        form?.addEventListener('submit', async (e) => {
-          e.preventDefault();
-          if (form.dataset.seBusy === '1') return;
-          form.dataset.seBusy = '1';
-          const btn = form.querySelector('button[type="submit"]');
-          if (btn) btn.disabled = true;
-          try {
-            const fd = new FormData(form);
-            const res = await window.SEStore.register(fd.get('username'), fd.get('password'), fd.get('confirm'));
-            if (res && res.ok) {
-              redirect(homeUrl());
-              return;
-            }
-            const msg = (res && res.error) || 'Registration failed.';
-            showAlert(document.getElementById('authAlert'), msg, false);
-            if (res && (res.code === 'USERNAME_TAKEN' || /already registered|already taken|not available|in use/i.test(msg))) {
-              if (hint) {
-                hint.hidden = false;
-                hint.className = 'field-hint bad';
-                hint.textContent = msg;
-              }
-            }
-            form.dataset.seBusy = '0';
-            if (btn) btn.disabled = false;
-          } catch (_) {
-            showAlert(document.getElementById('authAlert'), 'Registration failed. Please try again.', false);
-            form.dataset.seBusy = '0';
-            if (btn) btn.disabled = false;
-          }
-        });
+      if (isAuthPage()) {
+        await bindAuthForm();
       }
 
       bindLogoutLinks();
@@ -286,7 +264,7 @@
     }
     try {
       await window.SEStore.init({ force: true });
-      if (!window.SEStore.adminLoggedIn()) {
+      if (!locallyLoggedIn()) {
         unstickAuthGate();
         redirect(homeUrl());
         return false;
@@ -299,6 +277,10 @@
       return false;
     }
   };
+
+  window.SE_showToast = showToast;
+  window.SE_loginUrl = loginUrl;
+  window.SE_registerUrl = registerUrl;
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initAuth);
   else initAuth();

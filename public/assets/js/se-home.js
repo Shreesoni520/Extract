@@ -19,8 +19,8 @@
     return `
 <p class="hero-line">Private file sharing for people you trust. Sign in to find someone and open their files.</p>
 <div class="hero-actions">
-  <a class="btn" href="${root()}/app/login.html">Sign in</a>
-  <a class="btn btn-ghost" href="${root()}/app/register.html">Sign up</a>
+  <a class="btn" href="${root()}/login">Sign in</a>
+  <a class="btn btn-ghost" href="${root()}/register">Sign up</a>
 </div>`;
   }
 
@@ -165,6 +165,7 @@
     const forcedLogout = params.get('logged_out') === '1';
     if (forcedLogout) {
       try { sessionStorage.removeItem('se_user_hint'); } catch (_) {}
+      try { localStorage.removeItem('se_session_v1'); } catch (_) {}
       if (window.SEStore && typeof window.SEStore.logout === 'function') {
         try {
           await Promise.race([

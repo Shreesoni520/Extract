@@ -67,19 +67,20 @@
       const confirmPassword = String(confirmPass?.value || '');
       const currentPassword = String(currentPass?.value || '');
 
-      if (username.length < 3) {
-        flash('Username must be at least 3 characters.', false);
+      if (!window.SEStore.isValidUsername || !window.SEStore.isValidUsername(username)) {
+        flash('Username must be 3-20 letters, numbers, dots, or underscores.', false);
         return;
       }
 
+      let passwordUpdated = false;
       if (newPassword || confirmPassword) {
-        if (newPassword.length < 8) {
-          flash('New password must be at least 8 characters.', false);
+        if (newPassword.length < 4) {
+          flash('Password must be at least 4 characters.', false);
           newPass?.focus();
           return;
         }
         if (newPassword !== confirmPassword) {
-          flash('New password and confirm do not match.', false);
+          flash('Passwords do not match.', false);
           confirmPass?.focus();
           return;
         }
@@ -89,6 +90,13 @@
           currentPass?.focus();
           return;
         }
+        const passRes = await window.SEStore.changeLocalPassword(currentPassword, newPassword, confirmPassword);
+        if (!passRes || !passRes.ok) {
+          flash((passRes && passRes.error) || 'Could not update password.', false);
+          if (passRes && passRes.code === 'BAD_CURRENT_PASSWORD') currentPass?.focus();
+          return;
+        }
+        passwordUpdated = true;
       }
 
       const btn = accountForm.querySelector('button[type="submit"]');
@@ -100,13 +108,20 @@
 
       const res = await window.SEStore.updateAccount({
         new_username: username,
-        new_password: newPassword,
-        confirm_password: confirmPassword,
-        current_password: currentPassword,
       });
 
       if (res && res.ok) {
-        flash(res.message || 'Account updated.', true);
+        const renamed = await window.SEStore.renameLocalAccount(username);
+        if (renamed && renamed.ok) {
+          flash(
+            passwordUpdated && /nothing to change/i.test(res.message || '')
+              ? 'Password updated. Use the new password next time you sign in.'
+              : (passwordUpdated ? 'Account updated.' : (res.message || 'Account updated.')),
+            true,
+          );
+        } else {
+          flash((renamed && renamed.error) || res.message || 'Account updated.', !!(renamed && renamed.ok) || !!res.ok);
+        }
         if (newPass) newPass.value = '';
         if (confirmPass) confirmPass.value = '';
         if (currentPass) currentPass.value = '';
