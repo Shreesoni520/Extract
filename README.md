@@ -105,6 +105,12 @@ There is no public open folder of files. Bytes go through the API after a valid 
 
 ---
 
+## Author
+
+**Krishna Soni**
+
+---
+
 ## License
 
-Private sharing for a trusted circle. Built by **Shree**.
+Private sharing for a trusted circle. Built by **Krishna Soni**.
