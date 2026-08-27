@@ -205,18 +205,17 @@
   }
 
   async function initAuth() {
-    const failsafe = setTimeout(unstickAuthGate, 4000);
-    try {
-      if (!window.SEStore) {
-        unstickAuthGate();
-        return;
-      }
+    unstickAuthGate();
+    bindLogoutLinks();
+    document.addEventListener('se-home-ready', bindLogoutLinks);
 
-      if (isHome()) {
-        bindLogoutLinks();
-        document.addEventListener('se-home-ready', bindLogoutLinks);
-        unstickAuthGate();
-        return;
+    try {
+      if (!window.SEStore) return;
+
+      if (isHome()) return;
+
+      if (isAuthPage()) {
+        bindAuthForm();
       }
 
       await window.SEStore.init({ force: true });
@@ -227,8 +226,7 @@
       }
 
       if (isProtected() && !locallyLoggedIn()) {
-        unstickAuthGate();
-        redirect(homeUrl());
+        redirect(loginUrl());
         return;
       }
 
@@ -239,41 +237,30 @@
 
       if (isProtected() && locallyLoggedIn()) {
         revealAuthedUi();
-      } else {
-        unstickAuthGate();
       }
-
-      if (isAuthPage()) {
-        await bindAuthForm();
-      }
-
-      bindLogoutLinks();
-      document.addEventListener('se-home-ready', bindLogoutLinks);
     } catch (_) {
       unstickAuthGate();
-    } finally {
-      clearTimeout(failsafe);
     }
   }
 
   window.SE_requireAuth = async function requireAuth() {
     if (!window.SEStore) {
       unstickAuthGate();
-      redirect(homeUrl());
+      redirect(loginUrl());
       return false;
     }
     try {
       await window.SEStore.init({ force: true });
       if (!locallyLoggedIn()) {
         unstickAuthGate();
-        redirect(homeUrl());
+        redirect(loginUrl());
         return false;
       }
       revealAuthedUi();
       return true;
     } catch (_) {
       unstickAuthGate();
-      redirect(homeUrl());
+      redirect(loginUrl());
       return false;
     }
   };

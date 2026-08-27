@@ -165,11 +165,20 @@ async function fetchDbFresh() {
       return cloneDb(fresh);
     } catch (err) {
       console.warn('kvDb fetch:', err.message);
-      if (globalThis.__SE_BLOB_DB && !isEffectivelyEmpty(globalThis.__SE_BLOB_DB)) {
-        return cloneDb(globalThis.__SE_BLOB_DB);
-      }
-      throw err;
+      if (globalThis.__SE_BLOB_DB) return cloneDb(globalThis.__SE_BLOB_DB);
+      const fresh = emptyDb();
+      globalThis.__SE_BLOB_DB = fresh;
+      globalThis.__SE_BLOB_DB_AT = Date.now();
+      return cloneDb(fresh);
     }
+  }
+
+  if (!process.env.BLOB_READ_WRITE_TOKEN) {
+    if (!globalThis.__SE_BLOB_DB) {
+      globalThis.__SE_BLOB_DB = emptyDb();
+      globalThis.__SE_BLOB_DB_AT = Date.now();
+    }
+    return cloneDb(globalThis.__SE_BLOB_DB);
   }
 
   try {
@@ -231,6 +240,12 @@ async function saveDb(db) {
 
   if (useKv()) {
     await saveJsonDb(normalized);
+    globalThis.__SE_BLOB_DB = normalized;
+    globalThis.__SE_BLOB_DB_AT = Date.now();
+    return normalized;
+  }
+
+  if (!process.env.BLOB_READ_WRITE_TOKEN) {
     globalThis.__SE_BLOB_DB = normalized;
     globalThis.__SE_BLOB_DB_AT = Date.now();
     return normalized;

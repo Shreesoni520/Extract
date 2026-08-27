@@ -256,12 +256,11 @@
       writeUserHint(null);
     }
     if (!ready) {
-      ready = refreshMe().catch(() => cachedUser);
+      ready = Promise.resolve(cachedUser);
+      if (local) {
+        ensureServerSession(local.username).catch(() => {});
+      }
     }
-    if (cachedUser && cachedUser.username && !force) {
-      return cachedUser;
-    }
-    await ready;
     return cachedUser;
   }
 
@@ -293,7 +292,7 @@
     };
     saveLocalUser(account);
     paintLocalUser(account);
-    try { await ensureServerSession(account.username); } catch (_) {}
+    ensureServerSession(account.username).catch(() => {});
     try {
       global.dispatchEvent(new CustomEvent('se-auth-updated', { detail: cachedUser }));
     } catch (_) {}
@@ -306,7 +305,7 @@
     const hash = await hashPassword(String(password || ''), existing.salt);
     if (hash !== existing.passwordHash) return { ok: false, error: 'Wrong password.' };
     paintLocalUser(existing);
-    try { await ensureServerSession(existing.username); } catch (_) {}
+    ensureServerSession(existing.username).catch(() => {});
     try {
       global.dispatchEvent(new CustomEvent('se-auth-updated', { detail: cachedUser }));
     } catch (_) {}

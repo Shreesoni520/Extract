@@ -6,11 +6,12 @@ function useBlobDb() {
   const flag = process.env.USE_BLOB_DB;
   if (flag === '1' || flag === 'true') return true;
   if (flag === '0' || flag === 'false') return false;
-  // Prefer serverless JSON DB on Vercel when Redis/KV or Blob is available and MySQL is not.
+  const hasMysql = !!(process.env.DATABASE_URL || process.env.MYSQL_URL);
+  // On Vercel, never try localhost MySQL — use JSON DB (KV, Blob, or memory).
+  if (process.env.VERCEL && !hasMysql) return true;
   const hasKv = !!(process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN);
   const hasBlob = !!process.env.BLOB_READ_WRITE_TOKEN;
-  return !!(process.env.VERCEL && (hasKv || hasBlob)
-    && !process.env.DATABASE_URL && !process.env.MYSQL_URL);
+  return !!(process.env.VERCEL && (hasKv || hasBlob) && !hasMysql);
 }
 
 let query;

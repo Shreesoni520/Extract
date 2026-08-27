@@ -7,22 +7,11 @@ const cors = require('cors');
 const authRoutes = require('./routes/auth');
 const apiRoutes = require('./routes/api');
 const { router: filesRoutes } = require('./routes/files');
-const { ensureVisitor, getSessionUser } = require('./middleware/auth');
+const { ensureVisitor } = require('./middleware/auth');
 
 const EXTRACT_ROOT = path.resolve(__dirname, '..', '..');
 const PUBLIC_ROOT = path.join(EXTRACT_ROOT, 'public');
 const PAGES_ROOT = path.join(__dirname, '..', 'pages');
-
-function requirePageAuth(req, res, next) {
-  const user = getSessionUser(req);
-  if (!user) {
-    // Send guests to the home page (sign in from there), not a deep app URL.
-    return res.redirect(302, '/');
-  }
-  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
-  res.setHeader('Pragma', 'no-cache');
-  return next();
-}
 
 function sendProtectedPage(pageName) {
   return (req, res) => {
@@ -30,6 +19,8 @@ function sendProtectedPage(pageName) {
     if (!fs.existsSync(filePath)) {
       return res.status(404).send('Not found');
     }
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+    res.setHeader('Pragma', 'no-cache');
     return res.sendFile(filePath);
   };
 }
@@ -95,13 +86,13 @@ function createApp() {
     return res.redirect(302, `/register${qs}`);
   });
 
-  // Protected app pages — require a real signed-in session (not public CDN HTML).
-  app.get('/app/index.html', requirePageAuth, sendProtectedPage('index.html'));
-  app.get('/app/account.html', requirePageAuth, sendProtectedPage('account.html'));
-  app.get('/app/users.html', requirePageAuth, sendProtectedPage('users.html'));
-  app.get('/Extract/app/index.html', requirePageAuth, sendProtectedPage('index.html'));
-  app.get('/Extract/app/account.html', requirePageAuth, sendProtectedPage('account.html'));
-  app.get('/Extract/app/users.html', requirePageAuth, sendProtectedPage('users.html'));
+  // App pages — local login is enough; do not bounce guests with a server cookie check.
+  app.get('/app/index.html', sendProtectedPage('index.html'));
+  app.get('/app/account.html', sendProtectedPage('account.html'));
+  app.get('/app/users.html', sendProtectedPage('users.html'));
+  app.get('/Extract/app/index.html', sendProtectedPage('index.html'));
+  app.get('/Extract/app/account.html', sendProtectedPage('account.html'));
+  app.get('/Extract/app/users.html', sendProtectedPage('users.html'));
 
   // Prefer public/ on Vercel; fall back to Extract root for local XAMPP.
   // Vercel also serves public/ as static CDN assets; express.static is ignored there.

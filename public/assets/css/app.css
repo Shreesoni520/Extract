@@ -20,22 +20,8 @@
 * { box-sizing: border-box; }
 html, body { margin: 0; min-height: 100%; }
 
-/* Hide protected UI until the server/session auth check passes */
-html.auth-pending body > *:not(.site-cursor) {
-  visibility: hidden !important;
-}
-html.auth-pending body::before {
-  content: "Checking sign-in…";
-  position: fixed;
-  inset: 0;
-  display: grid;
-  place-items: center;
-  font-family: var(--font);
-  color: var(--muted);
-  background: var(--bg);
-  z-index: 99999;
-  animation: se-fade-in 220ms ease both;
-}
+/* Do not cover the whole app while auth loads — that blocked login pages. */
+html.auth-pending body::before { display: none !important; }
 html.auth-ok body {
   animation: se-fade-in 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
