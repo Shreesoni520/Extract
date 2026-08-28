@@ -50,4 +50,19 @@
       root.classList.add('se-theme-smooth');
     });
   });
+
+  document.addEventListener('click', (e) => {
+    if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    const a = e.target && e.target.closest ? e.target.closest('a[href]') : null;
+    if (!a || a.target === '_blank' || a.hasAttribute('download') || a.getAttribute('data-se-logout')) return;
+    const href = a.getAttribute('href');
+    if (!href || href.startsWith('#') || href.toLowerCase().startsWith('javascript:')) return;
+    let url;
+    try { url = new URL(a.href, window.location.href); } catch (_) { return; }
+    if (url.origin !== window.location.origin) return;
+    if (url.pathname === window.location.pathname && url.search === window.location.search) return;
+    e.preventDefault();
+    root.classList.add('se-page-out');
+    window.setTimeout(() => { window.location.href = url.href; }, 160);
+  });
 })();

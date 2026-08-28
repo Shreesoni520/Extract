@@ -91,10 +91,13 @@ const avatarUpload = multer({
   limits: { fileSize: 3 * 1024 * 1024 },
   fileFilter(_req, file, cb) {
     const allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
-    if (!allowed.includes(file.mimetype)) {
-      return cb(new Error('Use JPG, PNG, WEBP, or GIF.'));
+    const ext = path.extname(file.originalname || '').toLowerCase();
+    const okExt = ['.jpg', '.jpeg', '.png', '.webp', '.gif'].includes(ext);
+    const mime = String(file.mimetype || '').toLowerCase();
+    if (allowed.includes(mime) || (okExt && (!mime || mime === 'application/octet-stream'))) {
+      return cb(null, true);
     }
-    return cb(null, true);
+    return cb(new Error('Use JPG, PNG, WEBP, or GIF.'));
   },
 });
 
@@ -158,6 +161,13 @@ async function findItem(itemId) {
   if (!item) return null;
   // Missing is_active should not hide the file (treat as active).
   if (Number(item.is_active) === 0) return null;
+  return item;
+}
+
+async function findOwnedItem(itemId, ownerId) {
+  const rows = await query('SELECT * FROM items WHERE id = :id LIMIT 1', { id: itemId });
+  const item = rows[0] || null;
+  if (!item || Number(item.admin_id) !== Number(ownerId)) return null;
   return item;
 }
 
@@ -841,7 +851,7 @@ router.get('/my-items', requireAuth, async (req, res) => {
       items: items.map((item) => ({
         ...item,
         require_password: !!item.require_password,
-        is_active: !!item.is_active,
+        is_active: Number(item.is_active) !== 0,
         uploader: me.username,
         unlocked_count: Number(item.unlocked_count || 0),
       })),
@@ -1289,14 +1299,18 @@ router.post('/items/:id/toggle-password', requireAuth, async (req, res) => {
   try {
     const me = getSessionUser(req);
     const itemId = Number(req.params.id);
-    const item = await findItem(itemId);
-    if (!item || Number(item.admin_id) !== Number(me.id)) {
+    const item = await findOwnedItem(itemId, me.id);
+    if (!item) {
       return res.status(400).json({ ok: false, error: 'Could not update permission.' });
     }
-    const next = item.require_password ? 0 : 1;
+    const next = Number(item.require_password) ? 0 : 1;
     await query('UPDATE items SET require_password = :v WHERE id = :id', { v: next, id: itemId });
     if (next) await revokeActiveItemAccess(itemId);
-    return res.json({ ok: true, message: 'Permission setting updated.' });
+    return res.json({
+      ok: true,
+      message: next ? 'Password is now required.' : 'File is open — no password needed.',
+      require_password: !!next,
+    });
   } catch (err) {
     console.error('toggle-password', err);
     return res.status(500).json({ ok: false, error: 'Could not update permission.' });
@@ -1307,15 +1321,20 @@ router.post('/items/:id/toggle', requireAuth, async (req, res) => {
   try {
     const me = getSessionUser(req);
     const itemId = Number(req.params.id);
-    const item = await findItem(itemId);
-    if (!item || Number(item.admin_id) !== Number(me.id)) {
+    const item = await findOwnedItem(itemId, me.id);
+    if (!item) {
       return res.status(400).json({ ok: false, error: 'Could not update visibility.' });
     }
+    const next = Number(item.is_active) === 0 ? 1 : 0;
     await query('UPDATE items SET is_active = :v WHERE id = :id', {
-      v: item.is_active ? 0 : 1,
+      v: next,
       id: itemId,
     });
-    return res.json({ ok: true, message: 'Item visibility updated.' });
+    return res.json({
+      ok: true,
+      message: next ? 'File is visible again.' : 'File hidden from others.',
+      is_active: !!next,
+    });
   } catch (err) {
     console.error('toggle', err);
     return res.status(500).json({ ok: false, error: 'Could not update visibility.' });
@@ -1326,8 +1345,8 @@ router.post('/items/:id/lock', requireAuth, async (req, res) => {
   try {
     const me = getSessionUser(req);
     const itemId = Number(req.params.id);
-    const item = await findItem(itemId);
-    if (!item || Number(item.admin_id) !== Number(me.id)) {
+    const item = await findOwnedItem(itemId, me.id);
+    if (!item) {
       return res.status(400).json({ ok: false, error: 'Could not lock that file.' });
     }
     await revokeActiveItemAccess(itemId);
@@ -1342,8 +1361,8 @@ router.delete('/items/:id', requireAuth, async (req, res) => {
   try {
     const me = getSessionUser(req);
     const itemId = Number(req.params.id);
-    const item = await findItem(itemId);
-    if (!item || Number(item.admin_id) !== Number(me.id)) {
+    const item = await findOwnedItem(itemId, me.id);
+    if (!item) {
       return res.status(400).json({ ok: false, error: 'Could not delete that file.' });
     }
     await query('DELETE FROM items WHERE id = :id', { id: itemId });

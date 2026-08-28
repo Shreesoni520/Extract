@@ -42,12 +42,35 @@
     avatarForm?.addEventListener('submit', async (e) => {
       e.preventDefault();
       const file = avatarForm.querySelector('#avatarInput')?.files?.[0];
+      if (!file) {
+        flash('Choose a profile image first.', false);
+        return;
+      }
+      const btn = avatarForm.querySelector('button[type="submit"]');
+      if (btn) {
+        btn.disabled = true;
+        btn.dataset.originalLabel = btn.textContent || 'Save image';
+        btn.textContent = 'Saving…';
+      }
       const res = await window.SEStore.updateAvatar(file);
-      if (res.ok) {
-        flash(res.message, true);
+      if (res && res.ok) {
+        flash(res.message || 'Profile image saved.', true);
         const u = window.SEStore.getCurrentUser();
-        if (preview && u) preview.src = `${window.SEStore.avatarUrl(u.avatar, u.id)}&_=${Date.now()}`;
-      } else flash(res.error || 'Could not save image.', false);
+        if (preview) {
+          if (file.type.startsWith('image/') || /\.(jpe?g|png|webp|gif)$/i.test(file.name || '')) {
+            if (preview.dataset.blob) URL.revokeObjectURL(preview.dataset.blob);
+            const url = URL.createObjectURL(file);
+            preview.dataset.blob = url;
+            preview.src = url;
+          } else if (u) {
+            preview.src = `${window.SEStore.avatarUrl(u.avatar, u.id)}&t=${Date.now()}`;
+          }
+        }
+      } else flash((res && res.error) || 'Could not save image.', false);
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = btn.dataset.originalLabel || 'Save image';
+      }
     });
 
     const accountForm = document.getElementById('accountForm');

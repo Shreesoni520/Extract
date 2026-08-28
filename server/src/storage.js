@@ -201,6 +201,7 @@ module.exports = {
   useS3,
   uploadRoot,
   isRemoteUrl,
+  isKvUrl,
   isS3Key,
   saveFile,
   readFile,

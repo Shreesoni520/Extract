@@ -8,10 +8,13 @@ const { ensureVisitor } = require('../middleware/auth');
 const {
   uploadRoot,
   isRemoteUrl,
+  isKvUrl,
   isS3Key,
   getSignedDownloadUrl,
   getFileMeta,
   readFileRange,
+  readFile,
+  useKv,
 } = require('../storage');
 const { CHUNK_SIZE } = require('../kvStore');
 
@@ -245,66 +248,84 @@ router.get('/download', ensureVisitor, async (req, res) => {
   }
 });
 
+function avatarMimeFromName(name) {
+  const ext = path.extname(String(name || '')).toLowerCase();
+  if (ext === '.jpg' || ext === '.jpeg') return 'image/jpeg';
+  if (ext === '.webp') return 'image/webp';
+  if (ext === '.gif') return 'image/gif';
+  return 'image/png';
+}
+
+async function sendStoredAvatar(res, stored) {
+  if (!stored) return false;
+  if (isRemoteUrl(stored)) {
+    res.redirect(stored);
+    return true;
+  }
+  if (isS3Key(stored)) {
+    const signed = await getSignedDownloadUrl(stored, 3600);
+    res.redirect(signed);
+    return true;
+  }
+  if (isKvUrl(stored)) {
+    const file = await readFile(stored);
+    res.setHeader('Cache-Control', 'public, max-age=3600');
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.type(file.contentType || avatarMimeFromName(stored));
+    res.send(file.buffer);
+    return true;
+  }
+  return false;
+}
+
+function sendLetterAvatar(res, letter) {
+  const safeLetter = String(letter || 'U').replace(/[<>&]/g, '').charAt(0) || 'U';
+  const svg = `<?xml version="1.0" encoding="UTF-8"?><svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128"><rect width="128" height="128" rx="64" fill="#111111"/><text x="64" y="76" text-anchor="middle" font-family="Arial,sans-serif" font-size="52" font-weight="700" fill="#ffffff">${safeLetter}</text></svg>`;
+  res.setHeader('Cache-Control', 'public, max-age=60');
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  return res.type('image/svg+xml').send(svg);
+}
+
 router.get('/avatar', async (req, res) => {
   try {
     const rawF = String(req.query.f || '');
     const u = Number(req.query.u || 0);
     const avatarsDir = path.join(uploadRoot(), 'avatars');
 
-    let filePath = null;
-    let mime = 'image/png';
+    let stored = rawF;
     let letter = 'U';
 
-    // Blob/remote avatar URL stored in DB (or passed as f=https://...)
-    if (isRemoteUrl(rawF)) {
-      return res.redirect(rawF);
-    }
-
-    const f = rawF.replace(/[^a-zA-Z0-9._-]/g, '');
-
-    if (f) {
-      filePath = avatarPathInside(avatarsDir, f);
-      if (filePath && !fs.existsSync(filePath)) filePath = null;
-      else {
-        const ext = path.extname(f).toLowerCase();
-        if (ext === '.jpg' || ext === '.jpeg') mime = 'image/jpeg';
-        else if (ext === '.webp') mime = 'image/webp';
-        else if (ext === '.gif') mime = 'image/gif';
-        else mime = 'image/png';
-      }
-    } else if (u > 0) {
+    if (!stored && u > 0) {
       const rows = await query('SELECT username, avatar FROM admins WHERE id = :id LIMIT 1', { id: u });
       const user = rows[0];
       if (user) {
         letter = (user.username || 'U').charAt(0).toUpperCase();
-        if (user.avatar) {
-          if (isRemoteUrl(user.avatar)) {
-            return res.redirect(user.avatar);
-          }
-          const candidate = avatarPathInside(avatarsDir, user.avatar);
-          if (candidate && fs.existsSync(candidate)) {
-            filePath = candidate;
-            const ext = path.extname(user.avatar).toLowerCase();
-            if (ext === '.jpg' || ext === '.jpeg') mime = 'image/jpeg';
-            else if (ext === '.webp') mime = 'image/webp';
-            else if (ext === '.gif') mime = 'image/gif';
-            else mime = 'image/png';
-          }
-        }
+        stored = user.avatar || '';
       }
     }
 
-    if (filePath) {
-      res.setHeader('Cache-Control', 'public, max-age=86400');
-      res.setHeader('X-Content-Type-Options', 'nosniff');
-      return res.type(mime).sendFile(filePath);
+    if (stored) {
+      try {
+        if (await sendStoredAvatar(res, stored)) return;
+      } catch (err) {
+        console.warn('avatar remote', err.message);
+      }
+
+      const leaf = path.basename(String(stored).replace(/^kv:\/\//, ''));
+      const filePath = avatarPathInside(avatarsDir, leaf);
+      if (filePath && fs.existsSync(filePath)) {
+        res.setHeader('Cache-Control', 'public, max-age=86400');
+        res.setHeader('X-Content-Type-Options', 'nosniff');
+        return res.type(avatarMimeFromName(leaf)).sendFile(filePath);
+      }
+      if (leaf && useKv()) {
+        try {
+          if (await sendStoredAvatar(res, `kv://avatars/${leaf}`)) return;
+        } catch (_) {}
+      }
     }
 
-    const safeLetter = String(letter).replace(/[<>&]/g, '');
-    const svg = `<?xml version="1.0" encoding="UTF-8"?><svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128"><rect width="128" height="128" rx="64" fill="#111111"/><text x="64" y="76" text-anchor="middle" font-family="Arial,sans-serif" font-size="52" font-weight="700" fill="#ffffff">${safeLetter}</text></svg>`;
-    res.setHeader('Cache-Control', 'public, max-age=3600');
-    res.setHeader('X-Content-Type-Options', 'nosniff');
-    return res.type('image/svg+xml').send(svg);
+    return sendLetterAvatar(res, letter);
   } catch (err) {
     console.error('avatar', err);
     return res.status(500).send('Error');

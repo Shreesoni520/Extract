@@ -24,7 +24,7 @@
       ? `<button type="button" class="ghost small js-copy-link" data-item-id="${item.id}" data-mime="${esc(item.mime_type)}">Copy link</button>`
       : '';
     return `
-<article class="item-row${activeClass}">
+<article class="item-row${activeClass}" data-item-id="${item.id}" data-mime="${esc(item.mime_type)}">
   <div>
     <h3>${esc(item.title)}</h3>
     <p>
@@ -215,6 +215,42 @@
     requestAnimationFrame(syncOwnerPager);
   }
 
+  function patchOwnerRow(btn, itemId, next) {
+    const row = btn.closest('.item-row');
+    if (!row) return;
+    if (typeof next.is_active === 'boolean') {
+      row.classList.toggle('off', !next.is_active);
+      const vis = row.querySelector('[data-action="toggle"]');
+      if (vis) vis.textContent = next.is_active ? 'Hide' : 'Show';
+    }
+    if (typeof next.require_password === 'boolean') {
+      const passBtn = row.querySelector('[data-action="toggle_password"]');
+      if (passBtn) passBtn.textContent = next.require_password ? 'Make open' : 'Need password';
+      const meta = row.querySelector('p');
+      if (meta) {
+        meta.innerHTML = meta.innerHTML.replace(
+          /Password required|Open file/,
+          next.require_password ? 'Password required' : 'Open file',
+        );
+      }
+      const copyBtn = row.querySelector('.js-copy-link');
+      if (next.require_password) {
+        copyBtn?.remove();
+      } else if (!copyBtn) {
+        const actions = row.querySelector('.item-actions');
+        const vis = row.querySelector('[data-action="toggle"]');
+        if (actions && vis) {
+          const mime = row.getAttribute('data-mime') || '';
+          vis.insertAdjacentHTML('beforebegin',
+            `<button type="button" class="ghost small js-copy-link" data-item-id="${itemId}" data-mime="${esc(mime)}">Copy link</button>`);
+        }
+      }
+    }
+    if (next.removeLock) {
+      row.querySelector('[data-action="lock_all"]')?.remove();
+    }
+  }
+
   async function bindItemActions(root) {
     root.querySelectorAll('[data-action]').forEach((btn) => {
       btn.addEventListener('click', async () => {
@@ -228,11 +264,25 @@
         else if (action === 'lock_all') res = await window.SEStore.lockAll(itemId);
         else if (action === 'toggle') res = await window.SEStore.toggleVisibility(itemId);
         else if (action === 'delete') res = await window.SEStore.deleteItem(itemId);
-        else return;
+        else {
+          btn.disabled = false;
+          return;
+        }
         if (res && res.ok) {
           flash(res.message, true);
-          renderOwnerItems(await window.SEStore.listOwnerItems());
-          if (window.SE_refreshNotifications) await window.SE_refreshNotifications();
+          if (action === 'toggle') {
+            patchOwnerRow(btn, itemId, { is_active: !!res.is_active });
+            btn.disabled = false;
+          } else if (action === 'toggle_password') {
+            patchOwnerRow(btn, itemId, { require_password: !!res.require_password });
+            btn.disabled = false;
+          } else if (action === 'lock_all') {
+            patchOwnerRow(btn, itemId, { removeLock: true });
+            btn.disabled = false;
+            if (window.SE_refreshNotifications) await window.SE_refreshNotifications();
+          } else {
+            renderOwnerItems(await window.SEStore.listOwnerItems());
+          }
         } else {
           flash((res && res.error) || 'Action failed.', false);
           btn.disabled = false;

@@ -694,7 +694,7 @@
     const { data } = await api('/api/avatar', { method: 'POST', body: fd });
     if (data && data.ok) {
       if (cachedUser) cachedUser.avatar = data.avatar || cachedUser.avatar;
-      else await refreshMe();
+      await refreshMe();
     }
     return data || { ok: false, error: 'Choose a profile image.' };
   }

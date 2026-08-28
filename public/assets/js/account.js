@@ -8,9 +8,12 @@
       if (!file) return;
       pick.classList.add('has-file');
       if (nameEl) nameEl.textContent = file.name;
-      if (preview && file.type.startsWith('image/')) {
+      const looksImage = !file.type || file.type.startsWith('image/')
+        || /\.(jpe?g|png|webp|gif)$/i.test(file.name || '');
+      if (preview && looksImage) {
+        if (preview.dataset.blob) URL.revokeObjectURL(preview.dataset.blob);
         const url = URL.createObjectURL(file);
-        preview.onload = () => URL.revokeObjectURL(url);
+        preview.dataset.blob = url;
         preview.src = url;
       }
     };

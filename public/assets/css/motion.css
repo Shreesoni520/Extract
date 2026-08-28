@@ -16,6 +16,17 @@ html {
   html {
     scroll-behavior: smooth;
   }
+
+  body {
+    animation: se-fade-in 180ms var(--motion-ease) both;
+  }
+
+  html.se-page-out body {
+    animation: none;
+    opacity: 0;
+    transition: opacity 160ms var(--motion-ease);
+    pointer-events: none;
+  }
 }
 
 button,
@@ -87,6 +98,7 @@ a.nav-btn,
 }
 
 .item-table.is-paged .item-row,
+.item-row,
 .list.is-paged .row {
   animation: none;
 }

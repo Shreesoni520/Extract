@@ -19,6 +19,7 @@
   let watchTimer = null;
   let toastTimer = null;
   let lastFingerprint = '';
+  let lastCardsKey = '';
   const WATCH_MS = 12000;
   const FULL_POLL_MS = 30000;
 
@@ -216,6 +217,12 @@
     });
   }
 
+  function cardsKey(items) {
+    return (items || []).map((n) => (
+      `${n.id}:${n.status}:${n.is_done ? 1 : 0}:${n.is_read ? 1 : 0}:${n.can_lock ? 1 : 0}:${n.password || ''}`
+    )).join('|');
+  }
+
   function render(items, unread, doneCount) {
     latestItems = items;
     if (clearDone) {
@@ -223,7 +230,16 @@
       clearDone.textContent = doneCount > 0 ? `Clear done (${doneCount})` : 'Clear done';
     }
 
+    const nextKey = cardsKey(items);
+    if (nextKey && nextKey === lastCardsKey && list.querySelector('.notif-item')) {
+      if (unreadCount) unreadCount.textContent = String(unread);
+      if (bell) bell.hidden = unread < 1;
+      return;
+    }
+    lastCardsKey = nextKey;
+
     if (!items.length) {
+      lastCardsKey = '';
       list.innerHTML = `
         <li class="notif-empty">
           <span class="notif-mark" aria-hidden="true">
@@ -257,7 +273,7 @@
         : '';
 
       return `
-        <li class="notif-item ${done ? 'is-done' : ''} ${n.is_read ? 'is-read' : 'unread'} ${fresh && !done ? 'fresh' : ''}" data-id="${n.id}">
+        <li class="notif-item ${done ? 'is-done' : ''} ${n.is_read ? 'is-read' : 'unread'}${fresh && !done ? ' is-new' : ''}" data-id="${n.id}">
           <div class="notif-top">
             ${requesterBlock(n)}
             ${statusPill(n)}

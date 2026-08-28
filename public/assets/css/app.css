@@ -532,14 +532,13 @@ a.nav-btn-dark {
   height: 44px;
   border: 1.5px solid var(--mark-ink);
   border-radius: 50%;
-  opacity: 0;
+  opacity: 0.18;
   pointer-events: none;
-  animation: notif-mark-sonar 2.4s cubic-bezier(0.15, 0.6, 0.3, 1) infinite;
 }
 
-.notif-mark__ring:nth-child(1) { animation-delay: 0s; }
-.notif-mark__ring:nth-child(2) { animation-delay: 0.8s; }
-.notif-mark__ring:nth-child(3) { animation-delay: 1.6s; }
+.notif-mark__ring:nth-child(1) { transform: scale(0.72); }
+.notif-mark__ring:nth-child(2) { transform: scale(0.88); opacity: 0.12; }
+.notif-mark__ring:nth-child(3) { display: none; }
 
 .notif-mark__dot {
   position: relative;
@@ -666,8 +665,7 @@ a.nav-btn-dark {
   padding: 1rem 1.05rem;
   background: #fff;
   box-shadow: 0 1px 2px rgba(18, 21, 26, 0.03);
-  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
-  animation: se-fade-up 280ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .notif-item.unread {
@@ -676,9 +674,8 @@ a.nav-btn-dark {
   box-shadow: 0 0 0 1px rgba(15, 92, 92, 0.06), 0 8px 24px rgba(15, 92, 92, 0.06);
 }
 
-.notif-item.fresh {
-  border-color: #0f5c5c;
-  animation: notif-pop 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+.notif-item.is-new {
+  animation: se-fade-in 180ms ease both;
 }
 
 .notif-item.is-done {
@@ -1005,8 +1002,8 @@ a.nav-btn-dark {
   border: 1px solid var(--line);
   border-radius: 12px;
   background: #fafbfc;
-  animation: se-fade-up 220ms cubic-bezier(0.22, 1, 0.36, 1) both;
-  transition: transform 180ms cubic-bezier(0.22, 1, 0.36, 1), border-color 180ms ease, background 180ms ease;
+  animation: none;
+  transition: border-color 180ms ease, background 180ms ease, opacity 180ms ease;
 }
 
 .item-table.is-paged .item-row {
@@ -1014,7 +1011,7 @@ a.nav-btn-dark {
 }
 
 .item-row:hover {
-  transform: translate3d(0, -1px, 0);
+  border-color: #c9ced6;
 }
 
 .item-row.off { opacity: 0.55; }
@@ -1584,7 +1581,7 @@ a.nav-btn-dark {
   box-shadow: none;
 }
 
-[data-theme="dark"] .notif-item.fresh {
+[data-theme="dark"] .notif-item.is-new {
   border-color: #f5f5f5;
 }
 
