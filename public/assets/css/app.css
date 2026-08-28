@@ -179,6 +179,7 @@ button[type="submit"]:not(.ghost):hover { background: #000; }
   color: var(--ink);
   border: 1px solid var(--line);
   font-weight: 600;
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.12s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .ghost:hover {
@@ -346,10 +347,9 @@ button.nav-btn {
   box-sizing: border-box;
   appearance: none;
   -webkit-appearance: none;
-  transform: none !important;
   opacity: 1 !important;
   animation: none !important;
-  transition: background 0.15s ease, border-color 0.15s ease;
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.12s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .nav-btn:hover,
@@ -357,7 +357,6 @@ a.nav-btn:hover,
 button.nav-btn:hover {
   background: #f5f7f8;
   border-color: #c9ced6;
-  transform: none !important;
 }
 
 .nav-btn-dark,
@@ -407,7 +406,7 @@ a.nav-btn-dark {
   cursor: pointer;
   box-sizing: border-box;
   appearance: none;
-  transform: none !important;
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.12s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .back-btn-dark {
@@ -838,7 +837,7 @@ a.nav-btn-dark {
   gap: 0;
   width: 100%;
   margin-top: 0;
-  transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+  transition: transform 0.32s cubic-bezier(0.22, 1, 0.36, 1);
   will-change: transform;
 }
 
@@ -895,6 +894,10 @@ a.nav-btn-dark {
   color: #fff;
   border-color: var(--ink);
   transform: translateY(-50%) scale(1.04);
+}
+
+.owner-pager-nav:active:not(:disabled) {
+  transform: translateY(-50%) scale(0.96);
 }
 
 .owner-pager-nav:disabled {
@@ -1002,8 +1005,12 @@ a.nav-btn-dark {
   border: 1px solid var(--line);
   border-radius: 12px;
   background: #fafbfc;
-  animation: se-fade-up 280ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: se-fade-up 220ms cubic-bezier(0.22, 1, 0.36, 1) both;
   transition: transform 180ms cubic-bezier(0.22, 1, 0.36, 1), border-color 180ms ease, background 180ms ease;
+}
+
+.item-table.is-paged .item-row {
+  animation: none;
 }
 
 .item-row:hover {

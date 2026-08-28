@@ -268,18 +268,34 @@
       </div>
     `).join('');
 
-    grid.style.transform = `translate3d(-${listPage * 100}%, 0, 0)`;
     bindFileRows(grid);
     syncFilePagerChrome();
+    requestAnimationFrame(() => slideFilePager(true));
+  }
+
+  function filePagerWidth() {
+    return fileViewport ? fileViewport.clientWidth : (grid ? grid.clientWidth : 0);
+  }
+
+  function slideFilePager(instant) {
+    if (!grid?.classList.contains('is-paged')) return;
+    const x = listPage * filePagerWidth();
+    if (instant) {
+      const prev = grid.style.transition;
+      grid.style.transition = 'none';
+      grid.style.transform = `translate3d(-${x}px, 0, 0)`;
+      void grid.offsetWidth;
+      grid.style.transition = prev;
+      return;
+    }
+    grid.style.transform = `translate3d(-${x}px, 0, 0)`;
   }
 
   function goToFilePage(page) {
     const pages = pageCount();
     if (pages < 1) return;
     listPage = Math.max(0, Math.min(pages - 1, page));
-    if (grid?.classList.contains('is-paged')) {
-      grid.style.transform = `translate3d(-${listPage * 100}%, 0, 0)`;
-    }
+    slideFilePager(false);
     syncFilePagerChrome();
   }
 
@@ -291,7 +307,7 @@
 
     if (animate && landing) {
       landing.classList.add('se-view-out');
-      await wait(120);
+      await wait(180);
     }
 
     if (landing) {
@@ -327,7 +343,7 @@
 
     if (animate && filesView) {
       filesView.classList.add('se-view-out');
-      await wait(120);
+      await wait(180);
     }
 
     if (filesView) {
@@ -369,7 +385,7 @@
       try {
         const filesRoot = document.querySelector('.files');
         filesRoot?.classList.add('is-switching');
-        await wait(120);
+        await wait(140);
         setSearchMode();
         if (searchInput) searchInput.value = '';
         renderUsers([], '');
@@ -1068,6 +1084,12 @@
 
   filePrev?.addEventListener('click', () => goToFilePage(listPage - 1));
   fileNext?.addEventListener('click', () => goToFilePage(listPage + 1));
+
+  let fileResizeTimer = 0;
+  window.addEventListener('resize', () => {
+    window.clearTimeout(fileResizeTimer);
+    fileResizeTimer = window.setTimeout(() => slideFilePager(true), 80);
+  });
 
   let fileTouchX = null;
   fileViewport?.addEventListener('touchstart', (e) => {

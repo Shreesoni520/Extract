@@ -44,4 +44,10 @@
 
   document.addEventListener('se-home-ready', updateButtons);
   updateButtons();
+
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      root.classList.add('se-theme-smooth');
+    });
+  });
 })();

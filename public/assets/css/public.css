@@ -52,9 +52,8 @@ body.view-files { overflow: auto; }
 }
 
 .files.is-switching {
-  opacity: 0.55;
-  transform: translate3d(0, 6px, 0);
-  transition: opacity 180ms cubic-bezier(0.22, 1, 0.36, 1), transform 180ms cubic-bezier(0.22, 1, 0.36, 1);
+  opacity: 0.72;
+  transition: opacity 140ms ease;
   pointer-events: none;
 }
 
@@ -177,7 +176,7 @@ body.view-landing .bg {
   background: #000;
 }
 
-.btn:active { transform: none; box-shadow: none; }
+.btn:active { transform: scale(0.97); box-shadow: none; }
 
 .btn-ghost {
   background: transparent;
@@ -199,7 +198,7 @@ body.view-landing .bg {
 }
 
 .files-view.is-fast-in .files-wrap {
-  animation: se-fade-up 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: se-fade-in 180ms ease both;
 }
 
 .files-wrap {
@@ -271,10 +270,9 @@ button.nav-btn {
   box-sizing: border-box;
   appearance: none;
   -webkit-appearance: none;
-  transform: none !important;
   opacity: 1 !important;
   animation: none !important;
-  transition: background 0.15s ease, border-color 0.15s ease;
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.12s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .nav-btn:hover,
@@ -283,7 +281,6 @@ a.nav-btn:hover,
 button.nav-btn:hover {
   background: #f5f7f8;
   border-color: #c9ced6;
-  transform: none !important;
 }
 
 .nav-btn-dark,
@@ -648,6 +645,12 @@ a.nav-btn-dark:hover {
 .list.is-entering .row:nth-child(2) { animation-delay: 70ms; }
 .list.is-entering .row:nth-child(3) { animation-delay: 110ms; }
 .list.is-entering .row:nth-child(4) { animation-delay: 150ms; }
+
+.list.is-paged .row,
+.list.is-paged.is-entering .row {
+  animation: none;
+  opacity: 1;
+}
 
 @keyframes profile-in {
   to { opacity: 1; transform: none; }
@@ -1461,7 +1464,7 @@ a.nav-btn-dark:hover {
   width: 100%;
   margin: 0;
   padding: 0;
-  transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+  transition: transform 0.32s cubic-bezier(0.22, 1, 0.36, 1);
   will-change: transform;
 }
 
@@ -1517,6 +1520,10 @@ a.nav-btn-dark:hover {
   color: #fff;
   border-color: var(--ink);
   transform: translateY(-50%) scale(1.04);
+}
+
+.file-pager-nav:active:not(:disabled) {
+  transform: translateY(-50%) scale(0.96);
 }
 
 .file-pager-nav:disabled {
