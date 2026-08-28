@@ -6,7 +6,8 @@
   "main": "index.js",
   "scripts": {
     "start": "node server/src/index.js",
-    "dev": "node --watch server/src/index.js"
+    "dev": "node --watch server/src/index.js",
+    "reset-db": "node scripts/clear-db.js"
   },
   "engines": {
     "node": ">=18"
