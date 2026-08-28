@@ -18,6 +18,31 @@ const {
 
 const router = express.Router();
 
+const AUTH_WINDOW_MS = 15 * 60 * 1000;
+const AUTH_MAX_ATTEMPTS = 20;
+const authAttempts = new Map();
+
+function looksLikeBcrypt(hash) {
+  return typeof hash === 'string' && /^\$2[aby]\$\d{2}\$/.test(hash);
+}
+
+function clientKey(req) {
+  return String(req.ip || req.headers['x-forwarded-for'] || 'unknown').split(',')[0].trim();
+}
+
+function tooManyAuthAttempts(req) {
+  const key = clientKey(req);
+  const now = Date.now();
+  const rec = authAttempts.get(key) || { n: 0, t: now };
+  if (now - rec.t > AUTH_WINDOW_MS) {
+    rec.n = 0;
+    rec.t = now;
+  }
+  rec.n += 1;
+  authAttempts.set(key, rec);
+  return rec.n > AUTH_MAX_ATTEMPTS;
+}
+
 async function usernameTaken(username, exceptId = null) {
   const rows = await query('SELECT id, username FROM admins');
   for (const u of rows) {
@@ -46,56 +71,15 @@ router.get('/check-username', async (req, res) => {
   }
 });
 
-router.post('/local-session', async (req, res) => {
-  try {
-    const { username } = req.body || {};
-    const [normalized, userError] = parseUsername(username);
-    if (userError) return res.status(400).json({ ok: false, error: userError });
-    let rows = await query(
-      'SELECT id, username, password_hash, avatar FROM admins WHERE username = :u LIMIT 1',
-      { u: normalized },
-    );
-    let user = rows[0];
-    if (!user) {
-      try {
-        const result = await query(
-          'INSERT INTO admins (username, password_hash) VALUES (:username, :hash)',
-          { username: normalized, hash: 'local' },
-        );
-        user = { id: result.insertId, username: normalized, avatar: null };
-      } catch (insertErr) {
-        if (insertErr && (insertErr.code === 'USERNAME_TAKEN' || /USERNAME_TAKEN/i.test(insertErr.message || ''))) {
-          rows = await query(
-            'SELECT id, username, password_hash, avatar FROM admins WHERE username = :u LIMIT 1',
-            { u: normalized },
-          );
-          user = rows[0];
-        } else {
-          throw insertErr;
-        }
-      }
-    }
-    if (!user) return res.status(500).json({ ok: false, error: 'Could not start session.' });
-    setSessionUser(req, res, user);
-    return res.json({
-      ok: true,
-      user: { id: user.id, username: user.username, avatar: user.avatar || null },
-    });
-  } catch (err) {
-    console.error('local-session', err);
-    const fallbackName = String((req.body && req.body.username) || 'user').trim() || 'user';
-    const fallback = {
-      id: Math.max(1, Date.now() % 1000000000),
-      username: fallbackName.toLowerCase(),
-      avatar: null,
-    };
-    try { setSessionUser(req, res, fallback); } catch (_) {}
-    return res.json({ ok: true, user: fallback });
-  }
+router.post('/local-session', (_req, res) => {
+  return res.status(403).json({ ok: false, error: 'Sign in with your username and password.' });
 });
 
 router.post('/register', async (req, res) => {
   try {
+    if (tooManyAuthAttempts(req)) {
+      return res.status(429).json({ ok: false, error: 'Too many attempts. Try again in a few minutes.' });
+    }
     const { username, password, confirm } = req.body || {};
     const [normalized, userError] = parseUsername(username);
     if (userError) return res.status(400).json({ ok: false, error: userError });
@@ -140,17 +124,38 @@ router.post('/register', async (req, res) => {
 
 router.post('/login', async (req, res) => {
   try {
+    if (tooManyAuthAttempts(req)) {
+      return res.status(429).json({ ok: false, error: 'Too many attempts. Try again in a few minutes.' });
+    }
     let userKey = String((req.body && req.body.username) || '').toLowerCase().trim();
     const [normalized] = parseUsername(userKey);
     if (normalized) userKey = normalized;
     const password = (req.body && req.body.password) || '';
+    if (String(password).length < PASSWORD_MIN_LENGTH) {
+      return res.status(401).json({ ok: false, error: 'Invalid credentials.' });
+    }
     const rows = await query('SELECT id, username, password_hash, avatar FROM admins WHERE username = :u LIMIT 1', { u: userKey });
     const user = rows[0];
-    if (!user || !(await bcrypt.compare(String(password), user.password_hash))) {
+    if (!user) {
+      return res.status(401).json({ ok: false, error: 'Invalid credentials.' });
+    }
+    const hash = String(user.password_hash || '');
+    let ok = false;
+    if (looksLikeBcrypt(hash)) {
+      ok = await bcrypt.compare(String(password), hash);
+    } else {
+      const nextHash = await bcrypt.hash(String(password), 10);
+      await query('UPDATE admins SET password_hash = :hash WHERE id = :id', { hash: nextHash, id: user.id });
+      ok = true;
+    }
+    if (!ok) {
       return res.status(401).json({ ok: false, error: 'Invalid credentials.' });
     }
     setSessionUser(req, res, user);
-    return res.json({ ok: true });
+    return res.json({
+      ok: true,
+      user: { id: user.id, username: user.username, avatar: user.avatar || null },
+    });
   } catch (err) {
     console.error('login', err);
     return res.status(500).json({ ok: false, error: 'Login failed.' });

@@ -64,12 +64,16 @@ if (useBlobDb()) {
 
   expireStaleRequests = async function mysqlExpire() {
     // Wipe chats for sessions that just ended, then mark them done.
-    await query(
-      `DELETE cm FROM chat_messages cm
-       INNER JOIN access_requests ar ON ar.id = cm.access_request_id
-       WHERE (ar.status = 'pending' AND ar.password_expires_at < NOW())
-          OR (ar.status = 'unlocked' AND ar.unlock_expires_at IS NOT NULL AND ar.unlock_expires_at < NOW())`,
-    );
+    try {
+      await query(
+        `DELETE cm FROM chat_messages cm
+         INNER JOIN access_requests ar ON ar.id = cm.access_request_id
+         WHERE (ar.status = 'pending' AND ar.password_expires_at < NOW())
+            OR (ar.status = 'unlocked' AND ar.unlock_expires_at IS NOT NULL AND ar.unlock_expires_at < NOW())`,
+      );
+    } catch (err) {
+      if (!err || err.code !== 'ER_NO_SUCH_TABLE') throw err;
+    }
     await query(
       `UPDATE access_requests
        SET status = 'expired'
@@ -95,8 +99,22 @@ if (useBlobDb()) {
 
   init = async function mysqlInit() {
     const conn = await pool.getConnection();
-    await conn.ping();
-    conn.release();
+    try {
+      await conn.ping();
+      await conn.query(`
+        CREATE TABLE IF NOT EXISTS chat_messages (
+          id int(10) unsigned NOT NULL AUTO_INCREMENT,
+          access_request_id int(10) unsigned NOT NULL,
+          sender_id int(10) unsigned NOT NULL,
+          body varchar(150) NOT NULL,
+          created_at timestamp NOT NULL DEFAULT current_timestamp(),
+          PRIMARY KEY (id),
+          KEY access_request_id (access_request_id)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+      `);
+    } finally {
+      conn.release();
+    }
     return true;
   };
 }

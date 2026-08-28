@@ -32,9 +32,28 @@ function createApp() {
   const staticRoot = fs.existsSync(PUBLIC_ROOT) ? PUBLIC_ROOT : EXTRACT_ROOT;
   const sessionSecret = process.env.SESSION_SECRET || 'shree-extract-secret-change-me';
 
+  if (!process.env.SESSION_SECRET || sessionSecret === 'shree-extract-secret-change-me') {
+    console.warn('SESSION_SECRET is using the default. Set a long random value in server/.env');
+  }
+
   app.set('trust proxy', 1);
+  app.use((req, res, next) => {
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('X-Frame-Options', 'DENY');
+    res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+    res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+    next();
+  });
   app.use(cors({
-    origin: true,
+    origin(origin, cb) {
+      if (!origin) return cb(null, true);
+      try {
+        const { hostname } = new URL(origin);
+        if (hostname === 'localhost' || hostname === '127.0.0.1') return cb(null, true);
+        if (hostname === 'shrees-extractions.vercel.app') return cb(null, true);
+      } catch (_) {}
+      return cb(null, false);
+    },
     credentials: true,
   }));
   app.use(express.json({ limit: '2mb' }));

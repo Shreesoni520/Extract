@@ -17,6 +17,20 @@ const { CHUNK_SIZE } = require('../kvStore');
 
 const router = express.Router();
 
+function safeFileName(name) {
+  return String(name || 'download').replace(/[\r\n"]/g, '_');
+}
+
+function avatarPathInside(avatarsDir, fileName) {
+  const base = path.resolve(avatarsDir);
+  const leaf = path.basename(String(fileName || ''));
+  if (!leaf || leaf === '.' || leaf === '..') return null;
+  const resolved = path.resolve(base, leaf);
+  const prefix = base.endsWith(path.sep) ? base : `${base}${path.sep}`;
+  if (resolved !== base && !resolved.startsWith(prefix)) return null;
+  return resolved;
+}
+
 function parseBytesRange(header, size) {
   if (!header || typeof header !== 'string' || !header.startsWith('bytes=')) return null;
   const m = /^bytes=(\d*)-(\d*)$/.exec(header.trim());
@@ -181,7 +195,7 @@ router.get('/download', ensureVisitor, async (req, res) => {
     }
 
     const view = mode === 'view' && isPreviewable(item.mime_type);
-    const disposition = `${view ? 'inline' : 'attachment'}; filename="${encodeURIComponent(item.original_name || 'download')}"`;
+    const disposition = `${view ? 'inline' : 'attachment'}; filename="${encodeURIComponent(safeFileName(item.original_name))}"`;
 
     // S3/R2: redirect to a short-lived signed URL so video/audio seek smoothly (Range on CDN).
     if (isS3Key(item.filename)) {
@@ -249,8 +263,8 @@ router.get('/avatar', async (req, res) => {
     const f = rawF.replace(/[^a-zA-Z0-9._-]/g, '');
 
     if (f) {
-      filePath = path.join(avatarsDir, f);
-      if (!fs.existsSync(filePath)) filePath = null;
+      filePath = avatarPathInside(avatarsDir, f);
+      if (filePath && !fs.existsSync(filePath)) filePath = null;
       else {
         const ext = path.extname(f).toLowerCase();
         if (ext === '.jpg' || ext === '.jpeg') mime = 'image/jpeg';
@@ -267,8 +281,8 @@ router.get('/avatar', async (req, res) => {
           if (isRemoteUrl(user.avatar)) {
             return res.redirect(user.avatar);
           }
-          const candidate = path.join(avatarsDir, user.avatar);
-          if (fs.existsSync(candidate)) {
+          const candidate = avatarPathInside(avatarsDir, user.avatar);
+          if (candidate && fs.existsSync(candidate)) {
             filePath = candidate;
             const ext = path.extname(user.avatar).toLowerCase();
             if (ext === '.jpg' || ext === '.jpeg') mime = 'image/jpeg';

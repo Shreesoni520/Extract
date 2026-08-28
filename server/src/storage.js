@@ -35,8 +35,8 @@ function isRemoteUrl(value) {
 }
 
 function blobUploadsEnabled() {
-  // Token alone is not enough — this account's old Blob store was deleted/suspended.
-  // Set USE_BLOB_UPLOADS=1 only after a working Blob store is connected.
+  // Hobby Blob is currently unavailable on this account (store deleted / quota).
+  // Keep Redis as the live upload path (1 GB). R2/S3 unlocks the 5 GB ceiling.
   return useBlob() && String(process.env.USE_BLOB_UPLOADS || '') === '1';
 }
 

@@ -974,8 +974,11 @@ router.post('/upload', requireAuth, (req, res) => {
 
 router.post('/upload/init', requireAuth, async (req, res) => {
   try {
-    if (!useKv() && !useBlob() && process.env.VERCEL) {
-      return res.status(500).json({ ok: false, error: 'Storage is not configured.' });
+    if (!useKv() && !useBlob() && !useS3() && process.env.VERCEL) {
+      return res.status(500).json({
+        ok: false,
+        error: 'Storage is not configured. Redis, Blob, or R2 must be connected on Vercel.',
+      });
     }
     const me = getSessionUser(req);
     const title = String((req.body && req.body.title) || '').trim();
@@ -1397,19 +1400,22 @@ router.post('/account', requireAuth, async (req, res) => {
           error: 'This account has no saved password hash. Sign out and register again, or ask an admin to reset it.',
         });
       }
-      let ok = false;
-      try {
-        ok = await bcrypt.compare(currentPassword, String(user.password_hash));
-      } catch (cmpErr) {
-        console.error('account bcrypt.compare', cmpErr);
-        ok = false;
-      }
-      if (!ok) {
-        return res.status(400).json({
-          ok: false,
-          code: 'BAD_CURRENT_PASSWORD',
-          error: 'Current password is incorrect. Use the same password you type on the Sign in page.',
-        });
+      const hashStr = String(user.password_hash);
+      if (/^\$2[aby]\$\d{2}\$/.test(hashStr)) {
+        let ok = false;
+        try {
+          ok = await bcrypt.compare(currentPassword, hashStr);
+        } catch (cmpErr) {
+          console.error('account bcrypt.compare', cmpErr);
+          ok = false;
+        }
+        if (!ok) {
+          return res.status(400).json({
+            ok: false,
+            code: 'BAD_CURRENT_PASSWORD',
+            error: 'Current password is incorrect. Use the same password you type on the Sign in page.',
+          });
+        }
       }
     }
 
@@ -1490,7 +1496,22 @@ router.post('/avatar', requireAuth, (req, res) => {
   });
 });
 
-router.get('/admin/users', requireAuth, async (req, res) => {
+async function requireSiteOwner(req, res, next) {
+  try {
+    const me = getSessionUser(req);
+    if (!me) return res.status(401).json({ ok: false, error: 'Unauthorized' });
+    const rows = await query('SELECT id FROM admins ORDER BY id ASC LIMIT 1');
+    if (!rows[0] || Number(rows[0].id) !== Number(me.id)) {
+      return res.status(403).json({ ok: false, error: 'Only the site owner can manage users.' });
+    }
+    return next();
+  } catch (err) {
+    console.error('requireSiteOwner', err);
+    return res.status(500).json({ ok: false, error: 'Could not verify owner.' });
+  }
+}
+
+router.get('/admin/users', requireAuth, requireSiteOwner, async (req, res) => {
   try {
     const users = await query(
       `SELECT a.id, a.username, a.created_at,
@@ -1513,7 +1534,7 @@ router.get('/admin/users', requireAuth, async (req, res) => {
   }
 });
 
-router.post('/admin/users', requireAuth, async (req, res) => {
+router.post('/admin/users', requireAuth, requireSiteOwner, async (req, res) => {
   try {
     const { username, password, confirm } = req.body || {};
     const [normalized, userError] = parseUsername(username);
@@ -1542,7 +1563,7 @@ router.post('/admin/users', requireAuth, async (req, res) => {
   }
 });
 
-router.delete('/admin/users/:id', requireAuth, async (req, res) => {
+router.delete('/admin/users/:id', requireAuth, requireSiteOwner, async (req, res) => {
   try {
     const me = getSessionUser(req);
     const userId = Number(req.params.id);

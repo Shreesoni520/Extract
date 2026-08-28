@@ -90,12 +90,6 @@
           currentPass?.focus();
           return;
         }
-        const passRes = await window.SEStore.changeLocalPassword(currentPassword, newPassword, confirmPassword);
-        if (!passRes || !passRes.ok) {
-          flash((passRes && passRes.error) || 'Could not update password.', false);
-          if (passRes && passRes.code === 'BAD_CURRENT_PASSWORD') currentPass?.focus();
-          return;
-        }
         passwordUpdated = true;
       }
 
@@ -108,6 +102,9 @@
 
       const res = await window.SEStore.updateAccount({
         new_username: username,
+        new_password: newPassword || '',
+        confirm_password: confirmPassword || '',
+        current_password: currentPassword || '',
       });
 
       if (res && res.ok) {
