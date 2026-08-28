@@ -44,16 +44,144 @@
 </article>`;
   }
 
+  let ownerPage = 0;
+  let ownerPages = 1;
+
+  function ownerShareUrl(itemId, mime) {
+    const preview = /^(image|video|audio)\//.test(mime || '') || mime === 'application/pdf';
+    const mode = preview ? 'view' : 'download';
+    return `${window.location.origin}/download.html?item_id=${encodeURIComponent(itemId)}&mode=${mode}`;
+  }
+
+  async function copyOwnerText(text) {
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch (_) {
+      try {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.setAttribute('readonly', '');
+        ta.style.position = 'fixed';
+        ta.style.left = '-9999px';
+        document.body.appendChild(ta);
+        ta.select();
+        const ok = document.execCommand('copy');
+        ta.remove();
+        return ok;
+      } catch (_) {
+        return false;
+      }
+    }
+  }
+
+  function syncOwnerPager() {
+    const track = document.getElementById('ownerTrack');
+    const viewport = document.getElementById('ownerViewport');
+    const prev = document.getElementById('ownerPrev');
+    const next = document.getElementById('ownerNext');
+    const dots = document.getElementById('ownerDots');
+    const hint = document.getElementById('ownerFileHint');
+    if (!track || !track.classList.contains('is-paged')) {
+      if (hint) hint.hidden = true;
+      return;
+    }
+    ownerPage = Math.max(0, Math.min(ownerPages - 1, ownerPage));
+    const width = viewport ? viewport.clientWidth : track.clientWidth;
+    track.style.transform = `translate3d(-${ownerPage * width}px, 0, 0)`;
+    if (prev) prev.disabled = ownerPage <= 0;
+    if (next) next.disabled = ownerPage >= ownerPages - 1;
+    dots?.querySelectorAll('.owner-dot').forEach((dot) => {
+      const p = Number(dot.getAttribute('data-page') || 0);
+      dot.classList.toggle('is-active', p === ownerPage);
+    });
+    if (hint) {
+      hint.hidden = false;
+      hint.textContent = `Page ${ownerPage + 1} of ${ownerPages} · 4 per page`;
+    }
+  }
+
+  function goOwnerPage(page) {
+    ownerPage = Math.max(0, Math.min(ownerPages - 1, Number(page) || 0));
+    syncOwnerPager();
+  }
+
+  function ensureOwnerPagerBound() {
+    const mount = document.getElementById('ownerItemsMount');
+    if (!mount || mount.dataset.pagerBound === '1') return;
+    mount.dataset.pagerBound = '1';
+
+    mount.addEventListener('click', (e) => {
+      const next = e.target.closest('.owner-pager-next');
+      const prev = e.target.closest('.owner-pager-prev');
+      const dot = e.target.closest('.owner-dot');
+      const copyBtn = e.target.closest('.js-copy-link');
+      if (next) {
+        e.preventDefault();
+        goOwnerPage(ownerPage + 1);
+        return;
+      }
+      if (prev) {
+        e.preventDefault();
+        goOwnerPage(ownerPage - 1);
+        return;
+      }
+      if (dot) {
+        e.preventDefault();
+        goOwnerPage(Number(dot.getAttribute('data-page') || 0));
+        return;
+      }
+      if (copyBtn) {
+        e.preventDefault();
+        const id = copyBtn.getAttribute('data-item-id');
+        const mime = copyBtn.getAttribute('data-mime') || '';
+        if (!id) return;
+        const original = copyBtn.dataset.label || copyBtn.textContent;
+        copyBtn.dataset.label = original;
+        copyOwnerText(ownerShareUrl(id, mime)).then((ok) => {
+          copyBtn.textContent = ok ? 'Copied!' : 'Could not copy';
+          setTimeout(() => { copyBtn.textContent = original; }, 2200);
+        });
+      }
+    });
+
+    let touchX = null;
+    mount.addEventListener('touchstart', (e) => {
+      if (!e.target.closest('#ownerViewport')) return;
+      touchX = e.changedTouches[0]?.clientX ?? null;
+    }, { passive: true });
+    mount.addEventListener('touchend', (e) => {
+      if (touchX == null || !e.target.closest('#ownerViewport')) return;
+      const x = e.changedTouches[0]?.clientX ?? touchX;
+      const dx = x - touchX;
+      touchX = null;
+      if (Math.abs(dx) < 45) return;
+      goOwnerPage(ownerPage + (dx < 0 ? 1 : -1));
+    }, { passive: true });
+
+    window.addEventListener('resize', () => {
+      syncOwnerPager();
+    });
+  }
+
+  window.SE_bindOwnerPager = syncOwnerPager;
+
   function renderOwnerItems(items) {
     const mount = document.getElementById('ownerItemsMount');
     if (!mount) return;
     if (!items.length) {
+      ownerPage = 0;
+      ownerPages = 1;
       mount.innerHTML = '<p class="empty">Nothing uploaded yet.</p>';
+      const hint = document.getElementById('ownerFileHint');
+      if (hint) hint.hidden = true;
       return;
     }
     const pageSize = 4;
     const pages = Math.ceil(items.length / pageSize);
     const multi = pages > 1;
+    ownerPages = Math.max(1, pages);
+    ownerPage = Math.max(0, Math.min(ownerPages - 1, ownerPage));
     let trackHtml = '';
     if (multi) {
       for (let p = 0; p < pages; p += 1) {
@@ -66,24 +194,25 @@
     let dotsHtml = '';
     if (multi) {
       for (let i = 0; i < pages; i += 1) {
-        dotsHtml += `<button type="button" class="owner-dot${i === 0 ? ' is-active' : ''}" data-page="${i}" aria-label="Page ${i + 1} of ${pages}"></button>`;
+        dotsHtml += `<button type="button" class="owner-dot${i === ownerPage ? ' is-active' : ''}" data-page="${i}" aria-label="Page ${i + 1} of ${pages}"></button>`;
       }
     }
     mount.innerHTML = `
 <div class="owner-pager" id="ownerPager" data-pages="${pages}">
-  <button type="button" class="owner-pager-nav owner-pager-prev" id="ownerPrev"${multi ? '' : ' hidden'} aria-label="Previous files" disabled>
+  <button type="button" class="owner-pager-nav owner-pager-prev" id="ownerPrev"${multi ? '' : ' hidden'} aria-label="Previous files"${ownerPage <= 0 ? ' disabled' : ''}>
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M14.5 5.5L8 12l6.5 6.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
   </button>
   <div class="owner-pager-viewport" id="ownerViewport">
     <div class="item-table${multi ? ' is-paged' : ''}" id="ownerTrack">${trackHtml}</div>
   </div>
-  <button type="button" class="owner-pager-nav owner-pager-next" id="ownerNext"${multi ? '' : ' hidden'} aria-label="Next files">
+  <button type="button" class="owner-pager-nav owner-pager-next" id="ownerNext"${multi ? '' : ' hidden'} aria-label="Next files"${ownerPage >= ownerPages - 1 ? ' disabled' : ''}>
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M9.5 5.5L16 12l-6.5 6.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
   </button>
 </div>
 <div class="owner-pager-dots" id="ownerDots"${multi ? '' : ' hidden'}>${dotsHtml}</div>`;
     bindItemActions(mount);
-    if (window.SE_bindOwnerPager) window.SE_bindOwnerPager();
+    ensureOwnerPagerBound();
+    requestAnimationFrame(syncOwnerPager);
   }
 
   async function bindItemActions(root) {
