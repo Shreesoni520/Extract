@@ -84,6 +84,7 @@
     try { sessionStorage.removeItem('se_user_hint'); } catch (_) {}
     try { localStorage.removeItem('se_session_v1'); } catch (_) {}
     try { localStorage.removeItem('se_user_hint'); } catch (_) {}
+    try { localStorage.removeItem('se_users_v1'); } catch (_) {}
   }
 
   function ensureToastHost() {

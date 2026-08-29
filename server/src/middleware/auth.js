@@ -1,7 +1,7 @@
 const crypto = require('crypto');
 
 const AUTH_COOKIE = 'se_auth';
-const AUTH_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
+const AUTH_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
 
 function authSecret() {
   return process.env.SESSION_SECRET || 'shree-extract-secret-change-me';

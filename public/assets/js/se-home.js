@@ -180,67 +180,27 @@
     }
 
     const openBrowse = params.get('browse') === '1';
-    const hint = (!forcedLogout && window.SEStore && window.SEStore.readUserHint)
-      ? window.SEStore.readUserHint()
-      : null;
 
-    // Guest path: instant paint (no waiting) — same snappy feel as before.
-    if (!hint || !hint.username) {
-      paintHero(false);
-      bindHomeActions();
-      window.SE_LOGGED_IN = false;
-      window.SE_OPEN_BROWSE = false;
-      document.body?.setAttribute('data-logged-in', '0');
-
-      if (!window.SEStore) return;
-      await window.SEStore.init({ force: !!forcedLogout });
-      if (typeof window.SEStore.whenReady === 'function') {
-        try { await window.SEStore.whenReady(); } catch (_) {}
-      }
-      // Only upgrade if a real session exists (no hint yet, e.g. first login cookie).
-      if (!forcedLogout && window.SEStore.adminLoggedIn()) {
-        const u = window.SEStore.getCurrentUser();
-        paintHero(true, u && u.username);
-        bindHomeActions();
-        window.SE_LOGGED_IN = true;
-        window.SE_OPEN_BROWSE = openBrowse;
-        document.body?.setAttribute('data-logged-in', '1');
-        mountBrowseOnce();
-      }
-      return;
-    }
-
-    // Logged-in path: paint once from hint (instant), confirm session quietly.
-    // Do NOT paint again after /me unless the username changed or session is gone.
-    paintHero(true, hint.username);
+    paintHero(false);
     bindHomeActions();
-    window.SE_LOGGED_IN = true;
-    window.SE_OPEN_BROWSE = openBrowse;
-    document.body?.setAttribute('data-logged-in', '1');
-    mountBrowseOnce();
+    window.SE_LOGGED_IN = false;
+    window.SE_OPEN_BROWSE = false;
+    document.body?.setAttribute('data-logged-in', '0');
 
     if (!window.SEStore) return;
-    await window.SEStore.init({ force: !!forcedLogout });
+    await window.SEStore.init({ force: true });
     if (typeof window.SEStore.whenReady === 'function') {
       try { await window.SEStore.whenReady(); } catch (_) {}
     }
 
-    if (forcedLogout || !window.SEStore.adminLoggedIn()) {
-      window.SE_LOGGED_IN = false;
-      window.SE_OPEN_BROWSE = false;
-      document.body?.setAttribute('data-logged-in', '0');
-      paintHero(false);
+    if (!forcedLogout && window.SEStore.adminLoggedIn()) {
+      const u = window.SEStore.getCurrentUser();
+      paintHero(true, u && u.username);
       bindHomeActions();
-      const mount = document.getElementById('browseMount');
-      if (mount) mount.innerHTML = '';
-      return;
-    }
-
-    const u = window.SEStore.getCurrentUser();
-    const name = u && u.username ? String(u.username) : '';
-    if (name && name !== String(hint.username || '')) {
-      paintHero(true, name);
-      bindHomeActions();
+      window.SE_LOGGED_IN = true;
+      window.SE_OPEN_BROWSE = openBrowse;
+      document.body?.setAttribute('data-logged-in', '1');
+      mountBrowseOnce();
     }
   }
 

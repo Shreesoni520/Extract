@@ -3,6 +3,7 @@ const bcrypt = require('bcryptjs');
 const { query } = require('../db');
 const {
   parseUsername,
+  usernameKey,
   usernamesMatch,
   usernameTakenMessage,
   PASSWORD_MIN_LENGTH,
@@ -50,6 +51,25 @@ async function usernameTaken(username, exceptId = null) {
     if (usernamesMatch(username, u.username)) return true;
   }
   return false;
+}
+
+async function findAdminByUsername(raw) {
+  const [normalized] = parseUsername(raw);
+  const key = usernameKey(normalized || raw);
+  if (!key) return null;
+  const exact = await query(
+    'SELECT id, username, password_hash, avatar FROM admins WHERE username = :u LIMIT 1',
+    { u: normalized || key },
+  );
+  if (exact[0]) return exact[0];
+  const rows = await query('SELECT id, username FROM admins');
+  const match = rows.find((u) => usernamesMatch(key, u.username));
+  if (!match) return null;
+  const full = await query(
+    'SELECT id, username, password_hash, avatar FROM admins WHERE id = :id LIMIT 1',
+    { id: match.id },
+  );
+  return full[0] || null;
 }
 
 router.get('/check-username', async (req, res) => {
@@ -127,29 +147,25 @@ router.post('/login', async (req, res) => {
     if (tooManyAuthAttempts(req)) {
       return res.status(429).json({ ok: false, error: 'Too many attempts. Try again in a few minutes.' });
     }
-    let userKey = String((req.body && req.body.username) || '').toLowerCase().trim();
-    const [normalized] = parseUsername(userKey);
-    if (normalized) userKey = normalized;
-    const password = (req.body && req.body.password) || '';
-    if (String(password).length < PASSWORD_MIN_LENGTH) {
-      return res.status(401).json({ ok: false, error: 'Invalid credentials.' });
+    const [normalized, userError] = parseUsername((req.body && req.body.username) || '');
+    if (userError) {
+      return res.status(400).json({ ok: false, error: userError });
     }
-    const rows = await query('SELECT id, username, password_hash, avatar FROM admins WHERE username = :u LIMIT 1', { u: userKey });
-    const user = rows[0];
+    const password = (req.body && req.body.password) || '';
+    if (!String(password)) {
+      return res.status(400).json({ ok: false, error: 'Enter your password.' });
+    }
+    const user = await findAdminByUsername(normalized);
     if (!user) {
-      return res.status(401).json({ ok: false, error: 'Invalid credentials.' });
+      return res.status(401).json({ ok: false, error: 'No account with that username.' });
     }
     const hash = String(user.password_hash || '');
-    let ok = false;
-    if (looksLikeBcrypt(hash)) {
-      ok = await bcrypt.compare(String(password), hash);
-    } else {
-      const nextHash = await bcrypt.hash(String(password), 10);
-      await query('UPDATE admins SET password_hash = :hash WHERE id = :id', { hash: nextHash, id: user.id });
-      ok = true;
+    if (!looksLikeBcrypt(hash)) {
+      return res.status(401).json({ ok: false, error: 'Wrong password.' });
     }
+    const ok = await bcrypt.compare(String(password), hash);
     if (!ok) {
-      return res.status(401).json({ ok: false, error: 'Invalid credentials.' });
+      return res.status(401).json({ ok: false, error: 'Wrong password.' });
     }
     setSessionUser(req, res, user);
     return res.json({

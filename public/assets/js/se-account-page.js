@@ -131,17 +131,13 @@
       });
 
       if (res && res.ok) {
-        const renamed = await window.SEStore.renameLocalAccount(username);
-        if (renamed && renamed.ok) {
-          flash(
-            passwordUpdated && /nothing to change/i.test(res.message || '')
-              ? 'Password updated. Use the new password next time you sign in.'
-              : (passwordUpdated ? 'Account updated.' : (res.message || 'Account updated.')),
-            true,
-          );
-        } else {
-          flash((renamed && renamed.error) || res.message || 'Account updated.', !!(renamed && renamed.ok) || !!res.ok);
-        }
+        if (username) await window.SEStore.renameLocalAccount(username);
+        flash(
+          passwordUpdated
+            ? (res.message || 'Password updated. Use the new password next time you sign in.')
+            : (res.message || 'Account updated.'),
+          true,
+        );
         if (newPass) newPass.value = '';
         if (confirmPass) confirmPass.value = '';
         if (currentPass) currentPass.value = '';

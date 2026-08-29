@@ -27,30 +27,10 @@
   let cachedUser = null;
   let ready = null;
 
-  const USERS_KEY = 'se_users_v1';
   const SESSION_KEY = 'se_session_v1';
-
-  function usernameKey(username) {
-    return String(username || '').trim().toLowerCase();
-  }
 
   function isValidUsername(username) {
     return /^[a-zA-Z0-9._]{3,20}$/.test(String(username || '').trim());
-  }
-
-  function readUsers() {
-    try {
-      const raw = global.localStorage && global.localStorage.getItem(USERS_KEY);
-      return raw ? JSON.parse(raw) : {};
-    } catch (_) {
-      return {};
-    }
-  }
-
-  function writeUsers(users) {
-    try {
-      global.localStorage.setItem(USERS_KEY, JSON.stringify(users));
-    } catch (_) {}
   }
 
   function getSessionUsername() {
@@ -66,33 +46,6 @@
       if (username) global.localStorage.setItem(SESSION_KEY, username);
       else global.localStorage.removeItem(SESSION_KEY);
     } catch (_) {}
-  }
-
-  function getLocalUser(username) {
-    if (!username) return null;
-    const users = readUsers();
-    return users[usernameKey(username)] || null;
-  }
-
-  function saveLocalUser(user) {
-    const users = readUsers();
-    users[usernameKey(user.username)] = user;
-    writeUsers(users);
-    return user;
-  }
-
-  async function hashPassword(password, salt) {
-    const encoded = new TextEncoder().encode(`${salt}:${password}`);
-    const digest = await crypto.subtle.digest('SHA-256', encoded);
-    return Array.from(new Uint8Array(digest))
-      .map((byte) => byte.toString(16).padStart(2, '0'))
-      .join('');
-  }
-
-  function makeSalt() {
-    return Array.from(crypto.getRandomValues(new Uint8Array(16)))
-      .map((byte) => byte.toString(16).padStart(2, '0'))
-      .join('');
   }
 
   function apiUrl(path) {
@@ -161,19 +114,13 @@
     return cachedUser;
   }
 
-  function localAccountFromSession() {
-    const session = getSessionUsername();
-    return session ? getLocalUser(session) : null;
-  }
-
   function adminLoggedIn() {
     return !!(cachedUser && cachedUser.username);
   }
 
   function readUserHint() {
-    const local = localAccountFromSession();
-    if (local && local.username) {
-      return { id: (cachedUser && cachedUser.id) || 0, username: local.username };
+    if (cachedUser && cachedUser.username) {
+      return { id: cachedUser.id || 0, username: cachedUser.username };
     }
     try {
       const raw = sessionStorage.getItem('se_user_hint');
@@ -196,36 +143,35 @@
     } catch (_) {}
   }
 
-  function paintLocalUser(account, extra) {
+  function applyServerUser(user) {
+    if (!user || !user.username) {
+      cachedUser = null;
+      setSessionUsername(null);
+      writeUserHint(null);
+      return null;
+    }
     cachedUser = {
-      id: extra && extra.id ? Number(extra.id) : ((cachedUser && cachedUser.id) || 0),
-      username: account.username,
-      avatar: extra && extra.avatar ? extra.avatar : ((cachedUser && cachedUser.avatar) || null),
+      id: Number(user.id) || 0,
+      username: String(user.username),
+      avatar: user.avatar || null,
     };
-    setSessionUsername(account.username);
+    setSessionUsername(cachedUser.username);
     writeUserHint(cachedUser);
     return cachedUser;
-  }
-
-  async function ensureServerSession(_username) {
-    return refreshMe();
   }
 
   async function refreshMe() {
     try {
       const { data } = await api('/api/auth/me');
       if (data && data.ok && data.user && data.user.username) {
-        const local = getLocalUser(data.user.username) || { username: data.user.username };
-        paintLocalUser(local, data.user);
+        applyServerUser(data.user);
         try {
           global.dispatchEvent(new CustomEvent('se-auth-updated', { detail: cachedUser }));
         } catch (_) {}
         return cachedUser;
       }
       if (data && data.ok) {
-        cachedUser = null;
-        writeUserHint(null);
-        setSessionUsername(null);
+        applyServerUser(null);
         try {
           global.dispatchEvent(new CustomEvent('se-auth-updated', { detail: null }));
         } catch (_) {}
@@ -254,25 +200,6 @@
     return ready || Promise.resolve(cachedUser);
   }
 
-  async function rememberLocalAccount(username, password, extra) {
-    const name = String((extra && extra.username) || username || '').trim();
-    let account = getLocalUser(name);
-    if (!account) {
-      const salt = makeSalt();
-      account = {
-        username: name,
-        passwordHash: password ? await hashPassword(String(password), salt) : '',
-        salt,
-        createdAt: Date.now(),
-      };
-    } else if (password) {
-      account.passwordHash = await hashPassword(String(password), account.salt);
-    }
-    saveLocalUser(account);
-    paintLocalUser(account, extra);
-    return account;
-  }
-
   async function register(username, password, confirm) {
     const trimmed = String(username || '').trim();
     if (!isValidUsername(trimmed)) {
@@ -284,9 +211,6 @@
     if (password !== confirm) {
       return { ok: false, error: 'Passwords do not match.' };
     }
-    if (getLocalUser(trimmed)) {
-      return login(trimmed, password);
-    }
     const { data } = await api('/api/auth/register', {
       method: 'POST',
       body: { username: trimmed, password, confirm },
@@ -294,7 +218,7 @@
     if (!data || !data.ok) {
       return data || { ok: false, error: 'Could not continue' };
     }
-    await rememberLocalAccount(trimmed, password, data.user);
+    applyServerUser(data.user);
     try {
       global.dispatchEvent(new CustomEvent('se-auth-updated', { detail: cachedUser }));
     } catch (_) {}
@@ -304,7 +228,7 @@
   async function login(username, password) {
     const trimmed = String(username || '').trim();
     if (!isValidUsername(trimmed)) {
-      return { ok: false, error: 'Enter a valid username.' };
+      return { ok: false, error: 'Username must be 3-20 letters, numbers, dots, or underscores.' };
     }
     if (!password) return { ok: false, error: 'Enter your password.' };
     const { data } = await api('/api/auth/login', {
@@ -312,9 +236,9 @@
       body: { username: trimmed, password },
     });
     if (!data || !data.ok) {
-      return data || { ok: false, error: 'Invalid credentials.' };
+      return data || { ok: false, error: 'Could not continue' };
     }
-    await rememberLocalAccount(trimmed, password, data.user);
+    applyServerUser(data.user);
     try {
       global.dispatchEvent(new CustomEvent('se-auth-updated', { detail: cachedUser }));
     } catch (_) {}
@@ -322,11 +246,12 @@
   }
 
   async function logout() {
-    setSessionUsername(null);
     cachedUser = null;
     writeUserHint(null);
+    setSessionUsername(null);
     ready = null;
     try { sessionStorage.removeItem('se_user_hint'); } catch (_) {}
+    try { global.localStorage.removeItem('se_users_v1'); } catch (_) {}
     try {
       await api('/api/auth/logout', {
         method: 'POST',
@@ -334,50 +259,19 @@
         headers: { 'Cache-Control': 'no-store' },
       });
     } catch (_) {}
-    cachedUser = null;
-    writeUserHint(null);
+    applyServerUser(null);
     try {
       global.dispatchEvent(new CustomEvent('se-auth-updated', { detail: null }));
     } catch (_) {}
   }
 
-  async function changeLocalPassword(currentPassword, newPassword, confirmPassword) {
-    const account = localAccountFromSession();
-    if (!account) return { ok: false, error: 'Not logged in.' };
-    if (String(newPassword || '').length < 4) {
-      return { ok: false, error: 'Password must be at least 4 characters.' };
-    }
-    if (newPassword !== confirmPassword) {
-      return { ok: false, error: 'Passwords do not match.' };
-    }
-    const currentHash = await hashPassword(String(currentPassword || ''), account.salt);
-    if (currentHash !== account.passwordHash) {
-      return { ok: false, error: 'Wrong password.', code: 'BAD_CURRENT_PASSWORD' };
-    }
-    const salt = makeSalt();
-    account.salt = salt;
-    account.passwordHash = await hashPassword(String(newPassword), salt);
-    saveLocalUser(account);
-    return { ok: true, message: 'Password updated. Use the new password next time you sign in.' };
-  }
-
   async function renameLocalAccount(newUsername) {
-    const account = localAccountFromSession();
-    if (!account) return { ok: false, error: 'Not logged in.' };
+    if (!cachedUser) return { ok: false, error: 'Not logged in.' };
     const trimmed = String(newUsername || '').trim();
     if (!isValidUsername(trimmed)) {
       return { ok: false, error: 'Username must be 3-20 letters, numbers, dots, or underscores.' };
     }
-    const other = getLocalUser(trimmed);
-    if (other && usernameKey(other.username) !== usernameKey(account.username)) {
-      return { ok: false, error: 'That username is taken.', code: 'USERNAME_TAKEN' };
-    }
-    const users = readUsers();
-    delete users[usernameKey(account.username)];
-    account.username = trimmed;
-    users[usernameKey(trimmed)] = account;
-    writeUsers(users);
-    paintLocalUser(account, cachedUser);
+    applyServerUser(Object.assign({}, cachedUser, { username: trimmed }));
     return { ok: true, username: trimmed };
   }
 
@@ -702,16 +596,6 @@
   async function updateAccount(payload) {
     const { data } = await api('/api/account', { method: 'POST', body: payload || {} });
     if (data && data.ok) {
-      if (payload && payload.new_password) {
-        const account = localAccountFromSession();
-        if (account) {
-          const salt = makeSalt();
-          account.salt = salt;
-          account.passwordHash = await hashPassword(String(payload.new_password), salt);
-          if (payload.new_username) account.username = String(payload.new_username).trim();
-          saveLocalUser(account);
-        }
-      }
       await refreshMe();
     }
     return data || { ok: false, error: 'Could not update account.' };
@@ -766,7 +650,6 @@
     register,
     login,
     logout,
-    changeLocalPassword,
     renameLocalAccount,
     adminLoggedIn,
     getCurrentUser,

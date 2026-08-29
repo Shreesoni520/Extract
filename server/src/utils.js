@@ -78,7 +78,7 @@ function usernamesMatch(a, b) {
 }
 
 function usernameTakenMessage() {
-  return 'That username is already registered. Sign in instead, or choose a different username.';
+  return 'That username is taken.';
 }
 
 function avatarUrl(filename, userId) {

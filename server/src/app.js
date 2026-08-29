@@ -51,6 +51,8 @@ function createApp() {
         const { hostname } = new URL(origin);
         if (hostname === 'localhost' || hostname === '127.0.0.1') return cb(null, true);
         if (hostname === 'shrees-extractions.vercel.app') return cb(null, true);
+        if (hostname === 'shree-s-extractions.vercel.app') return cb(null, true);
+        if (hostname.endsWith('.vercel.app')) return cb(null, true);
       } catch (_) {}
       return cb(null, false);
     },
@@ -64,7 +66,7 @@ function createApp() {
   app.use(cookieSession({
     name: 'se_session',
     keys: [sessionSecret, `${sessionSecret}-fallback`],
-    maxAge: 7 * 24 * 60 * 60 * 1000,
+    maxAge: 30 * 24 * 60 * 60 * 1000,
     httpOnly: true,
     sameSite: 'lax',
     secure: isProd,
