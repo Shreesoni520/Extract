@@ -123,17 +123,21 @@ async function headS3Object(keyOrRef) {
   };
 }
 
-async function getSignedDownloadUrl(keyOrRef, expiresIn = 300) {
+async function getSignedDownloadUrl(keyOrRef, expiresIn = 300, opts = {}) {
   const key = stripS3Prefix(keyOrRef);
   const publicBase = String(process.env.S3_PUBLIC_URL || '').replace(/\/$/, '');
-  if (publicBase) {
+  const disposition = opts && opts.disposition ? String(opts.disposition) : '';
+  const contentType = opts && opts.contentType ? String(opts.contentType) : '';
+  if (publicBase && !disposition) {
     return `${publicBase}/${key.split('/').map(encodeURIComponent).join('/')}`;
   }
-  const url = await getSignedUrl(
-    getClient(),
-    new GetObjectCommand({ Bucket: s3Bucket(), Key: key }),
-    { expiresIn },
-  );
+  const command = new GetObjectCommand({
+    Bucket: s3Bucket(),
+    Key: key,
+    ...(disposition ? { ResponseContentDisposition: disposition } : {}),
+    ...(contentType ? { ResponseContentType: contentType } : {}),
+  });
+  const url = await getSignedUrl(getClient(), command, { expiresIn });
   return url;
 }
 

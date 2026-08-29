@@ -24,6 +24,14 @@ function safeFileName(name) {
   return String(name || 'download').replace(/[\r\n"]/g, '_');
 }
 
+function contentDisposition(filename, inline) {
+  const raw = safeFileName(filename) || 'download';
+  const ascii = raw.replace(/[^\x20-\x7E]/g, '_') || 'download';
+  const encoded = encodeURIComponent(raw);
+  const type = inline ? 'inline' : 'attachment';
+  return `${type}; filename="${ascii}"; filename*=UTF-8''${encoded}`;
+}
+
 function avatarPathInside(avatarsDir, fileName) {
   const base = path.resolve(avatarsDir);
   const leaf = path.basename(String(fileName || ''));
@@ -198,12 +206,15 @@ router.get('/download', ensureVisitor, async (req, res) => {
     }
 
     const view = mode === 'view' && isPreviewable(item.mime_type);
-    const disposition = `${view ? 'inline' : 'attachment'}; filename="${encodeURIComponent(safeFileName(item.original_name))}"`;
+    const disposition = contentDisposition(item.original_name, view);
 
     // S3/R2: redirect to a short-lived signed URL so video/audio seek smoothly (Range on CDN).
     if (isS3Key(item.filename)) {
       const ttl = Number(item.require_password) ? Math.max(60, UNLOCK_TTL_SECONDS) : 3600;
-      const signed = await getSignedDownloadUrl(item.filename, ttl);
+      const signed = await getSignedDownloadUrl(item.filename, ttl, {
+        disposition,
+        contentType: item.mime_type || undefined,
+      });
       return res.redirect(signed);
     }
 

@@ -43,7 +43,7 @@
     <a class="btn" href="/">Go to home</a>
     <p class="brand">Shree's Extractions</p>
   </div>
-  <script src="/assets/js/se-store.js?v=17"></script>
+  <script src="/assets/js/se-store.js?v=18"></script>
   <script src="/assets/js/se-api.js?v=1"></script>
   <script>
   (async function () {
@@ -101,14 +101,24 @@
         const a = document.createElement('a');
         a.href = url;
         a.download = result.filename || 'download';
+        a.rel = 'noopener';
         document.body.appendChild(a);
         a.click();
         a.remove();
         setTimeout(function () { URL.revokeObjectURL(url); }, 60_000);
-        showFail('Download started', result.title ? ('Saving “' + result.title + '”.') : 'Your download should begin shortly.');
+        showFail('Download started', result.title ? ('Saving “' + result.title + '”. If nothing happens, tap Save file.') : 'If nothing happens, tap Save file.');
         if (titleEl) titleEl.textContent = 'Download started';
         const icon = card && card.querySelector('.icon');
         if (icon) icon.style.display = 'none';
+        const home = card && card.querySelector('a.btn');
+        if (home) {
+          const save = document.createElement('a');
+          save.className = 'btn';
+          save.href = url;
+          save.download = result.filename || 'download';
+          save.textContent = 'Save file';
+          home.parentNode.insertBefore(save, home);
+        }
       }
     } catch (e) {
       showFail('Unavailable', 'Could not open this file.');

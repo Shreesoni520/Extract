@@ -647,8 +647,16 @@
       }
       const blob = await res.blob();
       const cd = res.headers.get('Content-Disposition') || '';
-      const m = /filename="?([^";]+)"?/i.exec(cd);
-      const filename = m ? decodeURIComponent(m[1]) : 'download';
+      const star = /filename\*\s*=\s*UTF-8''([^;]+)/i.exec(cd);
+      let filename = 'download';
+      if (star) {
+        try { filename = decodeURIComponent(star[1]); } catch (_) { filename = star[1]; }
+      } else {
+        const m = /filename="?([^";]+)"?/i.exec(cd);
+        if (m) {
+          try { filename = decodeURIComponent(m[1]); } catch (_) { filename = m[1]; }
+        }
+      }
       const canPreview = mode === 'view' && isPreviewable(blob.type);
       return { ok: true, blob, filename, canPreview, title: filename, error: null };
     } catch (_) {

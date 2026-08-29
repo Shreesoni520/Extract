@@ -457,6 +457,11 @@
     const downloadUrl = (window.SE_getDownloadUrl ? window.SE_getDownloadUrl(item.id, 'download') : `/api/download?item_id=${item.id}&mode=download`);
     viewBtn.href = viewUrl;
     downloadBtn.href = downloadUrl;
+    viewBtn.target = '_blank';
+    viewBtn.rel = 'noopener';
+    downloadBtn.target = '_blank';
+    downloadBtn.rel = 'noopener';
+    downloadBtn.setAttribute('download', fileDownloadName(item));
     viewBtn.style.display = canPreview(item.mime_type || '') ? '' : 'none';
     viewBtn.removeAttribute('aria-disabled');
     downloadBtn.removeAttribute('aria-disabled');
@@ -524,18 +529,65 @@
 
   async function openFileIfAllowed(mode) {
     if (!current) return;
-    const data = await refreshAccessStatus();
-    const status = data?.status || current.access?.status;
+    const url = (window.SE_getDownloadUrl
+      ? window.SE_getDownloadUrl(current.id, mode)
+      : `/api/download?item_id=${current.id}&mode=${mode}`);
+    const filename = fileDownloadName(current);
+    const status = current.access?.status;
     if (status !== 'unlocked' && status !== 'open') {
-      showError('This file was just locked. Request access again if you still need it.');
-      return;
+      const data = await refreshAccessStatus();
+      const next = data?.status || current.access?.status;
+      if (next !== 'unlocked' && next !== 'open') {
+        showError('This file was just locked. Request access again if you still need it.');
+        return;
+      }
     }
-    const url = (window.SE_getDownloadUrl ? window.SE_getDownloadUrl(current.id, mode) : `/api/download?item_id=${current.id}&mode=${mode}`);
     if (mode === 'view') {
       window.open(url, '_blank', 'noopener');
-    } else {
-      window.location.href = url;
+      return;
     }
+    await startFileDownload(url, filename, current.id);
+  }
+
+  function fileDownloadName(item) {
+    const raw = String((item && (item.original_name || item.title)) || 'download');
+    return raw.replace(/[/\\?%*:|"<>]/g, '_').trim() || 'download';
+  }
+
+  function clickDownloadLink(href, filename) {
+    const a = document.createElement('a');
+    a.href = href;
+    a.download = filename || 'download';
+    a.rel = 'noopener';
+    a.style.display = 'none';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  }
+
+  async function startFileDownload(url, filename, itemId) {
+    showError('');
+    try {
+      if (window.SEStore && typeof window.SEStore.downloadFile === 'function' && itemId) {
+        const result = await window.SEStore.downloadFile(itemId, 'download');
+        if (result && result.ok && result.blob) {
+          const name = result.filename || filename;
+          if (window.navigator && typeof window.navigator.msSaveOrOpenBlob === 'function') {
+            window.navigator.msSaveOrOpenBlob(result.blob, name);
+            return;
+          }
+          const blobUrl = URL.createObjectURL(result.blob);
+          clickDownloadLink(blobUrl, name);
+          setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000);
+          return;
+        }
+        if (result && result.error === 'locked') {
+          showError('This file was just locked. Request access again if you still need it.');
+          return;
+        }
+      }
+    } catch (_) {}
+    clickDownloadLink(url, filename);
   }
 
   function openFileShareUrl(item) {
@@ -689,6 +741,15 @@
   });
   downloadBtn?.addEventListener('click', (e) => {
     e.preventDefault();
+    if (!current) return;
+    const url = downloadBtn.getAttribute('href');
+    const filename = fileDownloadName(current);
+    const status = current.access?.status;
+    if ((status === 'unlocked' || status === 'open') && url && url !== '#') {
+      clickDownloadLink(url, filename);
+      startFileDownload(url, filename, current.id);
+      return;
+    }
     openFileIfAllowed('download');
   });
   copyLinkBtn?.addEventListener('click', async () => {
