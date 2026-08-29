@@ -10,6 +10,7 @@ require('dotenv').config({ path: path.join(__dirname, '..', '.env.local') });
 require('dotenv').config({ path: path.join(__dirname, '..', 'server', '.env') });
 
 const { useKv, loadJsonDb, saveJsonDb, deleteFileChunks, DB_KEY } = require('../server/src/kvStore');
+const { isS3Key, deleteS3Object } = require('../server/src/s3Store');
 
 function emptyDb() {
   return {
@@ -87,13 +88,19 @@ async function wipeKv() {
 
   for (const item of current.items || []) {
     if (!item || !item.filename) continue;
-    try { await deleteFileChunks(item.filename); } catch (err) {
+    try {
+      if (isS3Key(item.filename)) await deleteS3Object(item.filename);
+      else await deleteFileChunks(item.filename);
+    } catch (err) {
       console.warn('File delete skip:', err.message);
     }
   }
   for (const admin of current.admins || []) {
     if (!admin || !admin.avatar) continue;
-    try { await deleteFileChunks(admin.avatar); } catch (_) {}
+    try {
+      if (isS3Key(admin.avatar)) await deleteS3Object(admin.avatar);
+      else await deleteFileChunks(admin.avatar);
+    } catch (_) {}
   }
 
   for (const pattern of ['se:file:*', 'se:up:*']) {

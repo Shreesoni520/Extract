@@ -28,7 +28,7 @@
   let ready = null;
 
   const SESSION_KEY = 'se_session_v1';
-  const CLEAN_FLAG = 'se_fresh_v1';
+  const CLEAN_FLAG = 'se_fresh_v2';
 
   function wipeStaleBrowserAuth() {
     try {
