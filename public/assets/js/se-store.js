@@ -28,6 +28,18 @@
   let ready = null;
 
   const SESSION_KEY = 'se_session_v1';
+  const CLEAN_FLAG = 'se_fresh_v1';
+
+  function wipeStaleBrowserAuth() {
+    try {
+      if (global.localStorage.getItem(CLEAN_FLAG)) return;
+      global.localStorage.removeItem(SESSION_KEY);
+      global.localStorage.removeItem('se_users_v1');
+      global.localStorage.removeItem('se_user_hint');
+      global.sessionStorage.removeItem('se_user_hint');
+      global.localStorage.setItem(CLEAN_FLAG, '1');
+    } catch (_) {}
+  }
 
   function isValidUsername(username) {
     return /^[a-zA-Z0-9._]{3,20}$/.test(String(username || '').trim());
@@ -182,6 +194,7 @@
   }
 
   async function init(opts) {
+    wipeStaleBrowserAuth();
     const force = !!(opts && opts.force);
     if (force) {
       ready = null;
