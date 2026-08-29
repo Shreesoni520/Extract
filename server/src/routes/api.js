@@ -317,6 +317,7 @@ router.get('/items', requireAuth, ensureVisitor, async (req, res) => {
         require_password: !!Number(item.require_password),
         mime_type: item.mime_type,
         file_size: formatBytes(item.file_size),
+        file_size_bytes: Number(item.file_size) || 0,
         original_name: item.original_name,
         created_at: item.created_at,
         access,

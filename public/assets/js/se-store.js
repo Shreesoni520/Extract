@@ -634,34 +634,83 @@
   }
 
   async function downloadFile(itemId, mode) {
+    const url = `/api/download?item_id=${encodeURIComponent(itemId)}&mode=${encodeURIComponent(mode || 'download')}`;
+    const empty = {
+      ok: false, blob: null, filename: '', canPreview: false, title: '', error: 'unavailable',
+    };
     try {
-      const res = await fetch(
-        `/api/download?item_id=${encodeURIComponent(itemId)}&mode=${encodeURIComponent(mode || 'download')}`,
-        { credentials: 'include', cache: 'no-store' },
-      );
-      if (res.status === 403) {
-        return { ok: false, blob: null, filename: '', canPreview: false, title: '', error: 'locked' };
+      const firstEnd = 700000 - 1;
+      const first = await fetch(url, {
+        credentials: 'include',
+        cache: 'no-store',
+        headers: { Range: `bytes=0-${firstEnd}` },
+      });
+      if (first.status === 403) return Object.assign({}, empty, { error: 'locked' });
+      if (first.status === 404) return Object.assign({}, empty, { error: 'notfound' });
+      if (!first.ok && first.status !== 206) return empty;
+
+      const name = filenameFromDisposition(first.headers.get('Content-Disposition')) || 'download';
+      const type = first.headers.get('Content-Type') || 'application/octet-stream';
+
+      if (first.status === 200) {
+        const blob = await first.blob();
+        return {
+          ok: true,
+          blob,
+          filename: name,
+          canPreview: mode === 'view' && isPreviewable(blob.type || type),
+          title: name,
+          error: null,
+        };
       }
-      if (!res.ok) {
-        return { ok: false, blob: null, filename: '', canPreview: false, title: '', error: 'notfound' };
-      }
-      const blob = await res.blob();
-      const cd = res.headers.get('Content-Disposition') || '';
-      const star = /filename\*\s*=\s*UTF-8''([^;]+)/i.exec(cd);
-      let filename = 'download';
-      if (star) {
-        try { filename = decodeURIComponent(star[1]); } catch (_) { filename = star[1]; }
-      } else {
-        const m = /filename="?([^";]+)"?/i.exec(cd);
-        if (m) {
-          try { filename = decodeURIComponent(m[1]); } catch (_) { filename = m[1]; }
+
+      const totalMatch = /\/(\d+)\s*$/.exec(first.headers.get('Content-Range') || '');
+      const total = totalMatch ? Number(totalMatch[1]) : 0;
+      const parts = [await first.blob()];
+      const chunk = 700000;
+      if (total > chunk) {
+        for (let start = chunk; start < total; start += chunk) {
+          const end = Math.min(total - 1, start + chunk - 1);
+          const part = await fetch(url, {
+            credentials: 'include',
+            cache: 'no-store',
+            headers: { Range: `bytes=${start}-${end}` },
+          });
+          if (part.status === 403) return Object.assign({}, empty, { error: 'locked' });
+          if (!part.ok && part.status !== 206) return empty;
+          parts.push(await part.blob());
+          if (typeof global.dispatchEvent === 'function') {
+            try {
+              global.dispatchEvent(new CustomEvent('se-download-progress', {
+                detail: { itemId, loaded: Math.min(end + 1, total), total },
+              }));
+            } catch (_) {}
+          }
         }
       }
-      const canPreview = mode === 'view' && isPreviewable(blob.type);
-      return { ok: true, blob, filename, canPreview, title: filename, error: null };
+      const blob = new Blob(parts, { type: parts[0].type || type });
+      return {
+        ok: true,
+        blob,
+        filename: name,
+        canPreview: mode === 'view' && isPreviewable(blob.type || type),
+        title: name,
+        error: null,
+      };
     } catch (_) {
-      return { ok: false, blob: null, filename: '', canPreview: false, title: '', error: 'unavailable' };
+      return empty;
     }
+  }
+
+  function filenameFromDisposition(cd) {
+    if (!cd) return 'download';
+    const star = /filename\*\s*=\s*UTF-8''([^;]+)/i.exec(cd);
+    if (star) {
+      try { return decodeURIComponent(star[1]); } catch (_) { return star[1]; }
+    }
+    const m = /filename="?([^";]+)"?/i.exec(cd);
+    if (!m) return 'download';
+    try { return decodeURIComponent(m[1]); } catch (_) { return m[1]; }
   }
 
   const SEStore = {

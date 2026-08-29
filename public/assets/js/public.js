@@ -567,6 +567,23 @@
 
   async function startFileDownload(url, filename, itemId) {
     showError('');
+    const note = document.getElementById('modalText');
+    const prevNote = note ? note.textContent : '';
+    const onProgress = (ev) => {
+      const d = ev && ev.detail;
+      if (!d || Number(d.itemId) !== Number(itemId) || !note) return;
+      const loaded = Number(d.loaded) || 0;
+      const total = Number(d.total) || 0;
+      if (total > 0) {
+        note.hidden = false;
+        note.textContent = `Saving… ${Math.min(100, Math.round((loaded / total) * 100))}%`;
+      }
+    };
+    window.addEventListener('se-download-progress', onProgress);
+    if (note) {
+      note.hidden = false;
+      note.textContent = 'Saving file…';
+    }
     try {
       if (window.SEStore && typeof window.SEStore.downloadFile === 'function' && itemId) {
         const result = await window.SEStore.downloadFile(itemId, 'download');
@@ -574,20 +591,31 @@
           const name = result.filename || filename;
           if (window.navigator && typeof window.navigator.msSaveOrOpenBlob === 'function') {
             window.navigator.msSaveOrOpenBlob(result.blob, name);
+            if (note) note.textContent = 'Download started.';
             return;
           }
           const blobUrl = URL.createObjectURL(result.blob);
           clickDownloadLink(blobUrl, name);
           setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000);
+          if (note) note.textContent = 'Download started.';
           return;
         }
         if (result && result.error === 'locked') {
           showError('This file was just locked. Request access again if you still need it.');
           return;
         }
+        showError('Could not save that file. Try again.');
+        return;
       }
-    } catch (_) {}
-    clickDownloadLink(url, filename);
+    } catch (_) {
+      showError('Could not save that file. Try again.');
+      return;
+    } finally {
+      window.removeEventListener('se-download-progress', onProgress);
+      if (note && prevNote && note.textContent.indexOf('Saving') === 0) {
+        // leave the success line, or restore if we failed via showError
+      }
+    }
   }
 
   function openFileShareUrl(item) {
@@ -746,7 +774,6 @@
     const filename = fileDownloadName(current);
     const status = current.access?.status;
     if ((status === 'unlocked' || status === 'open') && url && url !== '#') {
-      clickDownloadLink(url, filename);
       startFileDownload(url, filename, current.id);
       return;
     }

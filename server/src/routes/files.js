@@ -82,25 +82,22 @@ async function streamKvFile(res, filename, item, disposition, rangeHeader) {
     return res.end(buffer);
   }
 
-  // Full download: stream chunk-by-chunk with 1-chunk prefetch (smoother playback/download).
+  // Full download: write chunks in this request so the serverless function
+  // stays alive until the last byte (pipe() returns too early on Vercel).
   res.setHeader('Content-Length', size);
   const chunkBytes = meta.chunkBytes || CHUNK_SIZE;
   const totalChunks = meta.chunks || Math.ceil(size / chunkBytes);
-  async function* iterate() {
-    let pending = null;
-    const load = (i) => {
-      const from = i * chunkBytes;
-      const to = Math.min(size - 1, from + chunkBytes - 1);
-      return readFileRange(filename, from, to);
-    };
-    for (let i = 0; i < totalChunks; i += 1) {
-      const part = pending || await load(i);
-      pending = i + 1 < totalChunks ? load(i + 1) : null;
-      if (part.buffer && part.buffer.length) yield part.buffer;
+  for (let i = 0; i < totalChunks; i += 1) {
+    const from = i * chunkBytes;
+    const to = Math.min(size - 1, from + chunkBytes - 1);
+    const part = await readFileRange(filename, from, to);
+    if (!part.buffer || !part.buffer.length) continue;
+    const canContinue = res.write(part.buffer);
+    if (!canContinue) {
+      await new Promise((resolve) => res.once('drain', resolve));
     }
-    if (pending) await pending.catch(() => null);
   }
-  return Readable.from(iterate()).pipe(res);
+  return res.end();
 }
 
 async function accessStateForItem(item, visitorToken, viewerId = null) {
