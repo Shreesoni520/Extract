@@ -19,7 +19,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@500;600;700&family=Sora:wght@700&display=swap" rel="stylesheet" media="print" onload="this.media='all'" />
   <noscript><link href="https://fonts.googleapis.com/css2?family=Figtree:wght@500;600;700&family=Sora:wght@700&display=swap" rel="stylesheet" /></noscript>
   <link rel="stylesheet" href="/assets/css/public.css?v=54" />
-  <link rel="stylesheet" href="/assets/css/motion.css?v=10" />
+  <link rel="stylesheet" href="/assets/css/motion.css?v=11" />
   <link rel="stylesheet" href="/assets/css/se-chat.css?v=8" />
 <script>
 (function () {
@@ -30,6 +30,9 @@
       if (t !== 'dark') localStorage.setItem('se_theme', 'dark');
     }
   } catch (_) {}
+  window.addEventListener('pageshow', function () {
+    document.documentElement.classList.remove('se-page-out');
+  });
 })();
 </script>
 </head>
@@ -56,7 +59,7 @@
   <script src="/assets/js/se-auth.js?v=17"></script>
   <script src="/assets/js/se-home.js?v=18"></script>
   <script src="/assets/js/se-chat.js?v=4"></script>
-  <script src="/assets/js/public.js?v=50" defer></script>
+  <script src="/assets/js/public.js?v=51" defer></script>
 <script>
 (function () {
   if (!document.getElementById('themeToggle')) {
@@ -71,6 +74,6 @@
   }
 })();
 </script>
-<script src="/assets/js/theme.js?v=5" defer></script>
+<script src="/assets/js/theme.js?v=6" defer></script>
 </body>
 </html>

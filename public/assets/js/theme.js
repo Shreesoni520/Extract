@@ -1,6 +1,8 @@
 (() => {
   const KEY = 'se_theme';
   const root = document.documentElement;
+  let navTimer = 0;
+  let navGen = 0;
 
   function currentTheme() {
     return root.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
@@ -30,6 +32,26 @@
     } catch (_) {}
     updateButtons();
   }
+
+  function clearPageOut() {
+    navGen += 1;
+    if (navTimer) {
+      window.clearTimeout(navTimer);
+      navTimer = 0;
+    }
+    root.classList.remove('se-page-out');
+    document.querySelectorAll('.se-view-out').forEach((el) => {
+      el.classList.remove('se-view-out');
+    });
+  }
+
+  // Back/forward cache keeps the faded-out page. Restore it immediately.
+  window.addEventListener('pageshow', clearPageOut);
+  window.addEventListener('pagehide', clearPageOut);
+  window.addEventListener('popstate', clearPageOut);
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') clearPageOut();
+  });
 
   // Event delegation so dynamically injected nav toggles always work
   // (home browse view hides the floating button and uses a nav button).
@@ -62,7 +84,13 @@
     if (url.origin !== window.location.origin) return;
     if (url.pathname === window.location.pathname && url.search === window.location.search) return;
     e.preventDefault();
+    const gen = navGen + 1;
+    navGen = gen;
     root.classList.add('se-page-out');
-    window.setTimeout(() => { window.location.href = url.href; }, 160);
+    navTimer = window.setTimeout(() => {
+      navTimer = 0;
+      if (navGen !== gen) return;
+      window.location.href = url.href;
+    }, 160);
   });
 })();

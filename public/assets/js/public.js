@@ -299,7 +299,19 @@
     syncFilePagerChrome();
   }
 
-  async function goToFiles({ animate = true } = {}) {
+  let filesHistoryPushed = false;
+
+  function browseUrl() {
+    const r = (window.SEStore && window.SEStore.root) || '';
+    return `${r}/?browse=1`;
+  }
+
+  function homeUrl() {
+    const r = (window.SEStore && window.SEStore.root) || '';
+    return r ? `${r}/` : '/';
+  }
+
+  async function goToFiles({ animate = true, fromPop = false } = {}) {
     if (transitioning || !filesView) return;
     transitioning = true;
     if (browseBtn) browseBtn.disabled = true;
@@ -322,8 +334,14 @@
     document.body.classList.add('view-files');
     window.scrollTo(0, 0);
     sessionStorage.setItem('se_files_open', '1');
-    if (window.history && window.history.replaceState) {
-      window.history.replaceState(null, '', '/?browse=1');
+    if (!fromPop && window.history) {
+      const alreadyBrowse = new URLSearchParams(window.location.search).get('browse') === '1';
+      if (!alreadyBrowse && window.history.pushState) {
+        window.history.pushState({ seView: 'files' }, '', browseUrl());
+        filesHistoryPushed = true;
+      } else if (window.history.replaceState) {
+        window.history.replaceState({ seView: 'files' }, '', browseUrl());
+      }
     }
     setSearchMode();
     if (searchInput) searchInput.value = '';
@@ -335,7 +353,7 @@
     searchInput?.focus();
   }
 
-  async function goToHome({ animate = true } = {}) {
+  async function goToHome({ animate = true, fromPop = false } = {}) {
     if (transitioning) return;
     transitioning = true;
     if (browseBtn) browseBtn.disabled = true;
@@ -364,8 +382,8 @@
     document.body.classList.add('view-landing');
     window.scrollTo(0, 0);
     sessionStorage.removeItem('se_files_open');
-    if (window.history && window.history.replaceState) {
-      window.history.replaceState(null, '', '/');
+    if (!fromPop && window.history && window.history.replaceState) {
+      window.history.replaceState({ seView: 'home' }, '', homeUrl());
     }
     selectedUser = null;
     currentQuery = '';
@@ -396,7 +414,26 @@
       }
       return;
     }
+    if (filesHistoryPushed) {
+      filesHistoryPushed = false;
+      window.history.back();
+      return;
+    }
     goToHome({ animate: true });
+  });
+
+  window.addEventListener('popstate', () => {
+    const browse = new URLSearchParams(window.location.search).get('browse') === '1';
+    filesHistoryPushed = false;
+    if (browse) goToFiles({ animate: false, fromPop: true });
+    else goToHome({ animate: false, fromPop: true });
+  });
+
+  window.addEventListener('pageshow', (e) => {
+    if (!e.persisted) return;
+    const browse = new URLSearchParams(window.location.search).get('browse') === '1';
+    if (browse) goToFiles({ animate: false, fromPop: true });
+    else goToHome({ animate: false, fromPop: true });
   });
 
   function stopTimer() {

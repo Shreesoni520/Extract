@@ -16,8 +16,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Sora:wght@500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/assets/css/app.css?v=31" />
-  <link rel="stylesheet" href="/assets/css/motion.css?v=10" />
+  <link rel="stylesheet" href="/assets/css/app.css?v=32" />
+  <link rel="stylesheet" href="/assets/css/motion.css?v=11" />
 <script>
 (function () {
   try {
@@ -27,6 +27,9 @@
       if (t !== 'dark') localStorage.setItem('se_theme', 'dark');
     }
   } catch (_) {}
+  window.addEventListener('pageshow', function () {
+    document.documentElement.classList.remove('se-page-out');
+  });
 })();
 </script>
 </head>
@@ -70,6 +73,6 @@
   }
 })();
 </script>
-<script src="/assets/js/theme.js?v=5" defer></script>
+<script src="/assets/js/theme.js?v=6" defer></script>
 </body>
 </html>
